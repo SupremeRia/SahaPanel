@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
-import { canManageAdmin, type Department } from "@/lib/types";
+import { canManageOperations, type Department } from "@/lib/types";
 import { PageHeader } from "@/components/ui";
 import { AdminClient } from "./admin-client";
 
@@ -9,7 +9,7 @@ export const metadata = { title: "Yetkili Paneli" };
 
 export default async function AdminPage() {
   const { supabase, profile } = await getCurrentProfile();
-  if (!canManageAdmin(profile?.role)) redirect("/dashboard");
+  if (!canManageOperations(profile?.role)) redirect("/dashboard");
 
   const { data: departments } = await supabase.from("departments").select("*").order("name", { ascending: true });
 

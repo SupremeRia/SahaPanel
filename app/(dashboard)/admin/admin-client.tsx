@@ -1,6 +1,7 @@
 "use client";
 
-import { Building2, Pencil, Plus, UserPlus } from "lucide-react";
+import Link from "next/link";
+import { Building2, Pencil, Plus, UserCheck } from "lucide-react";
 import { ActionForm, DeleteButton, SubmitButton } from "@/components/action-form";
 import { Dialog } from "@/components/modal";
 import {
@@ -10,11 +11,10 @@ import {
   SectionTitle,
   iconButtonClass,
   inputClass,
-  secondaryButtonClass,
-  selectClass
+  secondaryButtonClass
 } from "@/components/ui";
-import { createDepartment, createProfile, deleteDepartment, updateDepartment } from "@/app/actions";
-import { roleLabels, userRoles, type Department } from "@/lib/types";
+import { createDepartment, deleteDepartment, updateDepartment } from "@/app/actions";
+import { type Department } from "@/lib/types";
 
 export function AdminClient({ departments }: { departments: Department[] }) {
   return (
@@ -92,54 +92,25 @@ export function AdminClient({ departments }: { departments: Department[] }) {
       </Panel>
 
       <Panel className="flex flex-col gap-4">
-        <SectionTitle title="Personel profil kaydı" description="Mevcut bir kimlik için profil oluşturun." />
-        <p className="text-sm text-muted">
-          Supabase Auth kullanıcısı oluşturduktan sonra kullanıcı ID&apos;si ile profil kaydı açın.
-        </p>
-
-        <ActionForm
-          action={createProfile}
-          resetOnSuccess
-          successMessage="Personel kaydı oluşturuldu."
-          className="grid gap-4"
+        <SectionTitle
+          title="Personel kaydı"
+          description="Personel artık giriş ekranından kendisi kayıt olur."
+        />
+        <div className="rounded-lg border border-line bg-surface-2 p-4 text-sm leading-6 text-muted">
+          <p>
+            Yeni personel, giriş ekranındaki <span className="font-semibold text-ink">Kayıt ol</span> sekmesinden
+            e-posta, ad soyad, telefon ve departman bilgisiyle başvurur. Başvurular{" "}
+            <span className="font-semibold text-ink">Kayıt İstekleri</span> sekmesine düşer; onayladığınızda unvanı
+            belirleyip girişlerini aktifleştirebilirsiniz. Artık elle kullanıcı ID girmenize gerek yok.
+          </p>
+        </div>
+        <Link
+          href="/registrations"
+          className={secondaryButtonClass + " justify-center"}
         >
-          <Field label="Auth kullanıcı ID">
-            <input name="id" className={inputClass} placeholder="00000000-0000-0000-0000-000000000000" required />
-          </Field>
-          <Field label="Ad Soyad">
-            <input name="full_name" className={inputClass} required />
-          </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Rol">
-              <select name="role" className={selectClass} defaultValue="staff">
-                {userRoles.map((role) => (
-                  <option key={role} value={role}>
-                    {roleLabels[role]}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Departman">
-              <select name="department_id" className={selectClass} defaultValue="">
-                <option value="">Seçilmedi</option>
-                {departments.map((department) => (
-                  <option key={department.id} value={department.id}>
-                    {department.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Unvan">
-              <input name="title" className={inputClass} />
-            </Field>
-            <Field label="Telefon">
-              <input name="phone" className={inputClass} />
-            </Field>
-          </div>
-          <div className="flex justify-end">
-            <SubmitButton icon={UserPlus}>Personel ekle</SubmitButton>
-          </div>
-        </ActionForm>
+          <UserCheck className="h-4 w-4" aria-hidden />
+          Kayıt İsteklerine git
+        </Link>
       </Panel>
     </div>
   );

@@ -1,7 +1,9 @@
-/* SahaPanel service worker — sade, guvenli, importsuz.
-   Auth / Supabase / API cagrilarina asla dokunmaz; POST vb. istekleri onbellege almaz. */
+/* Aytemiz Petrol Yakutiye Şubesi paneli — service worker (sade, guvenli, importsuz).
+   Auth / Supabase / API cagrilarina ve Next.js RSC (dinamik veri) isteklerine asla
+   dokunmaz; boylece sunucu tarafinda guncellenen liste/veriler bayat onbellekten
+   servis edilmez. Yalnizca statik varliklar onbellege alinir. */
 
-const CACHE = "sahapanel-v1";
+const CACHE = "aytemiz-panel-v2";
 const PRECACHE = ["/offline.html", "/icon.svg"];
 const OFFLINE_URL = "/offline.html";
 
@@ -15,7 +17,7 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Aktiflesme: eski surum onbelleklerini temizle ve tum sekmeleri devral.
+// Aktiflesme: eski surum onbelleklerini (ornegin bayat RSC iceren) temizle.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -27,7 +29,17 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Bu istek onbellege alinabilir mi? (Sadece ayni kaynak, GET, auth/supabase disi.)
+// Next.js RSC / dinamik veri istegi mi? Bunlar ASLA onbellege alinmaz;
+// aksi halde server action sonrasi liste guncellenmez (bayat veri gorunur).
+function isDynamicRequest(request, url) {
+  if (request.headers.get("RSC") || request.headers.get("Next-Router-Prefetch")) return true;
+  const target = (url.pathname + url.search).toLowerCase();
+  if (target.includes("_rsc=")) return true;
+  if (url.pathname.startsWith("/_next/data")) return true;
+  return false;
+}
+
+// Bu istek onbellege alinabilir mi? (Sadece ayni kaynak, GET, statik varlik.)
 function isCacheableRequest(request) {
   if (request.method !== "GET") return false;
 
@@ -41,11 +53,12 @@ function isCacheableRequest(request) {
   // Yalnizca ayni kaynak; capraz kaynaklara (Supabase, CDN vb.) dokunma.
   if (url.origin !== self.location.origin) return false;
 
-  // Kimlik dogrulama ve veri katmani asla onbellege alinmaz.
+  // Kimlik dogrulama, veri katmani ve dinamik RSC istekleri asla onbellege alinmaz.
   const target = (url.pathname + url.search).toLowerCase();
   if (target.includes("/auth") || target.includes("supabase") || target.includes("/api/")) {
     return false;
   }
+  if (isDynamicRequest(request, url)) return false;
 
   return true;
 }
@@ -56,6 +69,7 @@ self.addEventListener("fetch", (event) => {
   if (!isCacheableRequest(request)) return;
 
   // Gezinme istekleri: once ag, sonra onbellek, en son cevrimdisi sayfasi.
+  // (Ag basarili oldugunda daima taze icerik gosterilir.)
   if (request.mode === "navigate") {
     event.respondWith(
       (async () => {
@@ -73,7 +87,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Diger ayni kaynak GET istekleri: stale-while-revalidate.
+  // Diger ayni kaynak GET istekleri (statik varliklar): stale-while-revalidate.
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE);

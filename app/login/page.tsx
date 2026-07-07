@@ -1,9 +1,17 @@
-import { LoginForm } from "@/components/login-form";
+import { createClient } from "@/lib/supabase/server";
+import { AuthTabs } from "@/components/auth-tabs";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata = { title: "Giriş yap" };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  // Kayit formundaki departman listesi (anonim okumaya acik).
+  const supabase = await createClient();
+  const { data: departments } = await supabase
+    .from("departments")
+    .select("id, name")
+    .order("name", { ascending: true });
+
   return (
     <main className="grid min-h-screen bg-canvas lg:grid-cols-[1fr_0.9fr]">
       <section className="relative flex items-center px-6 py-10 md:px-12">
@@ -11,16 +19,16 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="mb-8 flex items-center gap-3">
             <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-brand-600 font-bold text-white">
-              SP
+              AP
             </div>
             <div>
-              <p className="text-xl font-bold text-ink">SahaPanel</p>
+              <p className="text-xl font-bold text-ink">Aytemiz Petrol Yakutiye Şubesi</p>
               <p className="text-sm text-muted">Saha ekipleri için düzenli iş takibi</p>
             </div>
           </div>
-          <LoginForm />
+          <AuthTabs departments={departments ?? []} />
           <p className="mt-6 text-center text-xs text-muted-2">
-            Giriş bilgileriniz için ekip yöneticinizle iletişime geçin.
+            Kayıt olduktan sonra yetkili onayı ile girişiniz aktifleşir.
           </p>
         </div>
       </section>

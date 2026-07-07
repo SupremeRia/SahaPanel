@@ -37,10 +37,12 @@ const roleTone: Record<UserRole, Tone> = {
 
 export function PersonnelClient({
   personnel,
-  departments
+  departments,
+  canGrantAdmin
 }: {
   personnel: ProfileWithDepartment[];
   departments: DepartmentOption[];
+  canGrantAdmin: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<UserRole | "all">("all");
@@ -175,7 +177,10 @@ export function PersonnelClient({
                         <div className="grid gap-4 sm:grid-cols-2">
                           <Field label="Rol">
                             <select name="role" className={selectClass} defaultValue={person.role}>
-                              {userRoles.map((r) => (
+                              {(canGrantAdmin
+                                ? userRoles
+                                : Array.from(new Set([...userRoles.filter((r) => r !== "admin"), person.role]))
+                              ).map((r) => (
                                 <option key={r} value={r}>
                                   {roleLabels[r]}
                                 </option>

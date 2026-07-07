@@ -1,23 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
-import { canManageAdmin, roleLabels } from "@/lib/types";
+import { canManageOperations, roleLabels } from "@/lib/types";
 import { Avatar } from "@/components/ui";
-import { MobileNav, NavList } from "@/components/nav-list";
+import { MobileMenu, MobileNav, NavList } from "@/components/nav-list";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { signOut } from "@/app/actions";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const { profile } = await getCurrentProfile();
-  if (!profile?.is_active) redirect("/login");
-  const isAdmin = canManageAdmin(profile.role);
+  // Onaysiz/pasif kullanicilar panele giremez; onay bekleme ekranina yonlendirilir.
+  if (!profile || !profile.is_active) redirect("/pending");
+  const isManager = canManageOperations(profile.role);
 
   return (
     <div className="min-h-screen bg-canvas">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r border-line bg-surface px-4 py-5 lg:flex">
         <Brand />
         <div className="flex-1 overflow-y-auto">
-          <NavList isAdmin={isAdmin} />
+          <NavList isManager={isManager} />
         </div>
         <div className="mt-4 rounded-lg border border-line bg-surface-2 p-3">
           <div className="flex items-center gap-3">
@@ -43,6 +44,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         <Brand compact />
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <MobileMenu isManager={isManager} />
           <Avatar name={profile.full_name} size="sm" />
         </div>
       </header>
@@ -51,7 +53,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>
 
-      <MobileNav isAdmin={isAdmin} />
+      <MobileNav isManager={isManager} />
     </div>
   );
 }
@@ -59,13 +61,15 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <Link href="/dashboard" className="focus-ring flex items-center gap-3 rounded-md">
-      <div className="grid h-10 w-10 place-items-center rounded-lg bg-brand-600 font-bold text-white shadow-sm">SP</div>
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-600 font-bold text-white shadow-sm">
+        AP
+      </div>
       {compact ? (
-        <p className="text-lg font-bold text-ink">SahaPanel</p>
+        <p className="text-base font-bold text-ink">Aytemiz Petrol</p>
       ) : (
-        <div>
-          <p className="text-lg font-bold text-ink">SahaPanel</p>
-          <p className="text-xs text-muted">İş takip ve vardiya sistemi</p>
+        <div className="min-w-0">
+          <p className="truncate text-base font-bold text-ink">Aytemiz Petrol</p>
+          <p className="truncate text-xs text-muted">Yakutiye Şubesi</p>
         </div>
       )}
     </Link>

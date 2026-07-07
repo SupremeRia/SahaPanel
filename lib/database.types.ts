@@ -5,6 +5,7 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type UserRole = "admin" | "team_leader" | "staff";
+export type RegistrationStatus = "pending" | "approved" | "rejected";
 export type TaskStatus = "Bekliyor" | "Yapiliyor" | "Tamamlandi";
 export type TaskPriority = "Dusuk" | "Normal" | "Yuksek" | "Acil";
 export type FaultStatus = "Acik" | "Servise Bildirildi" | "Cozuldu";
@@ -31,6 +32,7 @@ export interface Database {
           title: string | null;
           phone: string | null;
           is_active: boolean;
+          registration_status: RegistrationStatus;
         } & Timestamps;
         Insert: {
           id: string;
@@ -40,6 +42,7 @@ export interface Database {
           title?: string | null;
           phone?: string | null;
           is_active?: boolean;
+          registration_status?: RegistrationStatus;
           created_at?: string;
           updated_at?: string;
         };
@@ -51,6 +54,7 @@ export interface Database {
           title?: string | null;
           phone?: string | null;
           is_active?: boolean;
+          registration_status?: RegistrationStatus;
           created_at?: string;
           updated_at?: string;
         };
@@ -93,6 +97,7 @@ export interface Database {
           ends_at: string;
           is_leave: boolean;
           note: string | null;
+          photo_url: string | null;
         } & Timestamps;
         Insert: {
           id?: string;
@@ -102,6 +107,7 @@ export interface Database {
           ends_at: string;
           is_leave?: boolean;
           note?: string | null;
+          photo_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -113,8 +119,36 @@ export interface Database {
           ends_at?: string;
           is_leave?: boolean;
           note?: string | null;
+          photo_url?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      shift_boards: {
+        Row: {
+          id: string;
+          title: string | null;
+          week_start: string | null;
+          image_url: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title?: string | null;
+          week_start?: string | null;
+          image_url: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string | null;
+          week_start?: string | null;
+          image_url?: string;
+          created_by?: string | null;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -207,9 +241,15 @@ export interface Database {
       current_user_role: { Args: Record<string, never>; Returns: UserRole };
       is_admin: { Args: Record<string, never>; Returns: boolean };
       is_manager: { Args: Record<string, never>; Returns: boolean };
+      approve_registration: {
+        Args: { target: string; new_role?: UserRole; dept?: string | null; new_title?: string | null };
+        Returns: undefined;
+      };
+      reject_registration: { Args: { target: string }; Returns: undefined };
     };
     Enums: {
       user_role: UserRole;
+      registration_status: RegistrationStatus;
       task_status: TaskStatus;
       task_priority: TaskPriority;
       fault_status: FaultStatus;
@@ -226,5 +266,6 @@ export type DepartmentRow = Database["public"]["Tables"]["departments"]["Row"];
 export type AnnouncementRow = Database["public"]["Tables"]["announcements"]["Row"];
 export type AnnouncementReadRow = Database["public"]["Tables"]["announcement_reads"]["Row"];
 export type ShiftRow = Database["public"]["Tables"]["shifts"]["Row"];
+export type ShiftBoardRow = Database["public"]["Tables"]["shift_boards"]["Row"];
 export type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 export type FaultRow = Database["public"]["Tables"]["faults"]["Row"];

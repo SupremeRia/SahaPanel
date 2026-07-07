@@ -30,7 +30,7 @@ export default async function ProfilePage() {
           <Avatar name={profile?.full_name} size="lg" />
           <div className="min-w-0">
             <h2 className="truncate text-xl font-semibold text-ink">
-              {profile?.full_name ?? "SahaPanel kullanıcısı"}
+              {profile?.full_name ?? "Panel kullanıcısı"}
             </h2>
             <p className="truncate text-sm text-muted">{user.email}</p>
           </div>

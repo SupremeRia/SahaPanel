@@ -4,8 +4,10 @@ import type {
   FaultRow,
   ProfileRow,
   ShiftRow,
+  ShiftBoardRow,
   TaskRow,
   UserRole,
+  RegistrationStatus,
   TaskStatus,
   TaskPriority,
   FaultStatus,
@@ -15,6 +17,7 @@ import type {
 
 export type {
   UserRole,
+  RegistrationStatus,
   TaskStatus,
   TaskPriority,
   FaultStatus,
@@ -24,6 +27,7 @@ export type {
 
 export type Profile = ProfileRow;
 export type Department = DepartmentRow;
+export type ShiftBoard = ShiftBoardRow;
 
 // Ortak tonlar (rozet / uyari renkleri)
 export type Tone = "neutral" | "green" | "amber" | "red" | "blue" | "purple";
@@ -35,6 +39,18 @@ export const roleLabels: Record<UserRole, string> = {
   admin: "Admin",
   team_leader: "Takım Lideri",
   staff: "Personel"
+};
+
+export const registrationStatusLabels: Record<RegistrationStatus, string> = {
+  pending: "Onay Bekliyor",
+  approved: "Onaylandı",
+  rejected: "Reddedildi"
+};
+
+export const registrationStatusTone: Record<RegistrationStatus, Tone> = {
+  pending: "amber",
+  approved: "green",
+  rejected: "red"
 };
 
 export const taskStatusLabels: Record<TaskStatus, string> = {
@@ -122,6 +138,11 @@ export function canManageAdmin(role?: UserRole | null) {
   return role === "admin";
 }
 
+// Yalnizca admin, admin rolu atayabilir/geri alabilir.
+export function canGrantAdmin(role?: UserRole | null) {
+  return role === "admin";
+}
+
 // ---------------------------------------------------------------------------
 // Iliskili (join) sorgu goruntu tipleri
 // ---------------------------------------------------------------------------
@@ -146,5 +167,9 @@ export type FaultWithRelations = FaultRow & {
 };
 
 export type ShiftWithRelations = ShiftRow & {
+  profiles?: ProfileName;
+};
+
+export type ShiftBoardWithRelations = ShiftBoardRow & {
   profiles?: ProfileName;
 };

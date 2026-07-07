@@ -1,6 +1,6 @@
-# SahaPanel
+# Aytemiz Petrol Yakutiye Şubesi — Saha Paneli
 
-SahaPanel; WhatsApp grup karmaşası yerine duyuru, görev, arıza, vardiya ve personel takibini tek panelde toplamak için hazırlanmış, responsive bir saha operasyon yönetim panelidir. Petrol istasyonu, market, saha ekibi ve vardiyalı çalışan takımlar için yapılandırılmış bir iş akışı sunar.
+Bu panel; WhatsApp grup karmaşası yerine duyuru, görev, arıza, vardiya ve personel takibini tek yerde toplamak için hazırlanmış, responsive bir saha operasyon yönetim panelidir. Petrol istasyonu, market, saha ekibi ve vardiyalı çalışan takımlar için yapılandırılmış bir iş akışı sunar. Personel giriş ekranından kendisi kayıt olur; yetkili (admin veya takım lideri) onayladıktan sonra girişi aktifleşir.
 
 ## Öne çıkan özellikler
 

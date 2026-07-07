@@ -48,6 +48,32 @@ async function attempt(
   }
 }
 
+// Ortak gorsel yukleme (arıza/vardiya fotolari). Basarida herkese acik URL doner.
+async function uploadImage(
+  supabase: Session["supabase"],
+  bucket: string,
+  userId: string,
+  file: File
+): Promise<{ url?: string; error?: string }> {
+  const photoError = validatePhoto(file);
+  if (photoError) return { error: photoError };
+  const extension = (file.name.split(".").pop() ?? "jpg").toLowerCase();
+  const path = `${userId}/${crypto.randomUUID()}.${extension}`;
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .upload(path, file, { upsert: false, contentType: file.type || undefined });
+  if (error) return { error: "Görsel yüklenemedi: " + describeError(error) };
+  return { url: data?.path ? supabase.storage.from(bucket).getPublicUrl(data.path).data.publicUrl : undefined };
+}
+
+// Herkese acik URL'den depo icindeki obje yolunu cikar (best-effort silme icin).
+function storagePathFromUrl(url: string, bucket: string): string | null {
+  const marker = `/${bucket}/`;
+  const index = url.indexOf(marker);
+  if (index === -1) return null;
+  return decodeURIComponent(url.slice(index + marker.length));
+}
+
 // ---------------------------------------------------------------------------
 // Kimlik
 // ---------------------------------------------------------------------------
@@ -348,7 +374,7 @@ export async function deleteFault(_: ActionResult, formData: FormData): Promise<
 // Vardiyalar
 // ---------------------------------------------------------------------------
 export async function createShift(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("admin");
+  const { session, denied } = await ensure("ops");
   if (denied) return denied;
   const shiftDate = getString(formData, "shift_date");
   const profileId = getString(formData, "profile_id");
@@ -357,6 +383,15 @@ export async function createShift(_: ActionResult, formData: FormData): Promise<
   if (!shiftDate || !profileId || !startsAt || !endsAt) {
     return fail("Tarih, personel, başlangıç ve bitiş zorunludur.");
   }
+
+  let photoUrl: string | null = null;
+  const file = formData.get("photo");
+  if (file instanceof File && file.size > 0) {
+    const upload = await uploadImage(session.supabase, "shift-photos", session.user.id, file);
+    if (upload.error) return fail(upload.error, { photo: upload.error });
+    photoUrl = upload.url ?? null;
+  }
+
   return attempt(
     () =>
       session.supabase.from("shifts").insert({
@@ -365,7 +400,8 @@ export async function createShift(_: ActionResult, formData: FormData): Promise<
         starts_at: startsAt,
         ends_at: endsAt,
         is_leave: getBoolean(formData, "is_leave"),
-        note: getString(formData, "note")
+        note: getString(formData, "note"),
+        photo_url: photoUrl
       }),
     "Vardiya eklendi.",
     ["/shifts", "/dashboard"]
@@ -373,7 +409,7 @@ export async function createShift(_: ActionResult, formData: FormData): Promise<
 }
 
 export async function updateShift(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("admin");
+  const { session, denied } = await ensure("ops");
   if (denied) return denied;
   const id = getString(formData, "id");
   const shiftDate = getString(formData, "shift_date");
@@ -384,6 +420,18 @@ export async function updateShift(_: ActionResult, formData: FormData): Promise<
   if (!shiftDate || !profileId || !startsAt || !endsAt) {
     return fail("Tarih, personel, başlangıç ve bitiş zorunludur.");
   }
+
+  // Mevcut fotografi koru; yeni foto yuklenirse degistir; "kaldir" isaretliyse sil.
+  let photoUrl = getString(formData, "photo_url");
+  const file = formData.get("photo");
+  if (file instanceof File && file.size > 0) {
+    const upload = await uploadImage(session.supabase, "shift-photos", session.user.id, file);
+    if (upload.error) return fail(upload.error, { photo: upload.error });
+    photoUrl = upload.url ?? photoUrl;
+  } else if (getBoolean(formData, "remove_photo")) {
+    photoUrl = null;
+  }
+
   return attempt(
     () =>
       session.supabase
@@ -394,7 +442,8 @@ export async function updateShift(_: ActionResult, formData: FormData): Promise<
           starts_at: startsAt,
           ends_at: endsAt,
           is_leave: getBoolean(formData, "is_leave"),
-          note: getString(formData, "note")
+          note: getString(formData, "note"),
+          photo_url: photoUrl
         })
         .eq("id", id),
     "Vardiya güncellendi.",
@@ -403,7 +452,7 @@ export async function updateShift(_: ActionResult, formData: FormData): Promise<
 }
 
 export async function deleteShift(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("admin");
+  const { session, denied } = await ensure("ops");
   if (denied) return denied;
   const id = getString(formData, "id");
   if (!id) return fail("Kayıt bulunamadı.");
@@ -415,43 +464,72 @@ export async function deleteShift(_: ActionResult, formData: FormData): Promise<
 }
 
 // ---------------------------------------------------------------------------
-// Personel & profil
+// Vardiya görselleri (haftalık plan — Excel çıktısı/fotoğraf)
 // ---------------------------------------------------------------------------
-export async function createProfile(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("admin");
+export async function createShiftBoard(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  const { session, denied } = await ensure("ops");
   if (denied) return denied;
-  const id = getString(formData, "id");
-  const fullName = getString(formData, "full_name");
-  const role = getEnum(formData, "role", userRoles) ?? "staff";
-  if (!id || !fullName) {
-    return fail("Kullanıcı ID ve ad soyad zorunludur.", {
-      id: !id ? "Kullanıcı ID zorunludur." : "",
-      full_name: !fullName ? "Ad soyad zorunludur." : ""
-    });
+  const file = formData.get("image");
+  if (!(file instanceof File) || file.size === 0) {
+    return fail("Görsel zorunludur.", { image: "Bir görsel seçin." });
   }
+  const upload = await uploadImage(session.supabase, "shift-photos", session.user.id, file);
+  if (upload.error) return fail(upload.error, { image: upload.error });
+  if (!upload.url) return fail("Görsel yüklenemedi.");
+
+  const imageUrl = upload.url;
   return attempt(
     () =>
-      session.supabase.from("profiles").insert({
-        id,
-        full_name: fullName,
-        role,
-        department_id: getString(formData, "department_id"),
+      session.supabase.from("shift_boards").insert({
         title: getString(formData, "title"),
-        phone: getString(formData, "phone"),
-        is_active: true
+        week_start: getString(formData, "week_start"),
+        image_url: imageUrl,
+        created_by: session.user.id
       }),
-    "Personel profili oluşturuldu.",
-    ["/personnel", "/admin"]
+    "Vardiya görseli eklendi.",
+    ["/shifts", "/dashboard"]
   );
 }
 
+export async function deleteShiftBoard(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  const { session, denied } = await ensure("ops");
+  if (denied) return denied;
+  const id = getString(formData, "id");
+  if (!id) return fail("Kayıt bulunamadı.");
+
+  const imageUrl = getString(formData, "image_url");
+  if (imageUrl) {
+    const objectPath = storagePathFromUrl(imageUrl, "shift-photos");
+    if (objectPath) await session.supabase.storage.from("shift-photos").remove([objectPath]);
+  }
+
+  return attempt(
+    () => session.supabase.from("shift_boards").delete().eq("id", id),
+    "Vardiya görseli silindi.",
+    ["/shifts", "/dashboard"]
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Personel & profil
+// ---------------------------------------------------------------------------
 export async function updateProfile(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("admin");
+  const { session, denied } = await ensure("ops");
   if (denied) return denied;
   const id = getString(formData, "id");
   const fullName = getString(formData, "full_name");
   const role = getEnum(formData, "role", userRoles) ?? "staff";
   if (!id || !fullName) return fail("Kullanıcı ve ad soyad zorunludur.");
+
+  // Admin olmayan yetkili, bir admin'i düzenleyemez veya admin rolü atayamaz.
+  // (DB guard bunu zaten engeller; burada net bir uyarı vererek yanıltıcı
+  // "başarılı" mesajını önlüyoruz.)
+  if (!canManageAdmin(session.profile?.role)) {
+    if (role === "admin") return fail("Admin rolünü yalnızca admin atayabilir.");
+    const { data: target } = await session.supabase.from("profiles").select("role").eq("id", id).maybeSingle();
+    if (target?.role === "admin") return fail("Bir yöneticiyi yalnızca admin düzenleyebilir.");
+  }
+
   return attempt(
     () =>
       session.supabase
@@ -470,15 +548,56 @@ export async function updateProfile(_: ActionResult, formData: FormData): Promis
 }
 
 export async function updateProfileActive(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("admin");
+  const { session, denied } = await ensure("ops");
   if (denied) return denied;
   const id = getString(formData, "profile_id");
   if (!id) return fail("Kayıt bulunamadı.");
   const isActive = getBoolean(formData, "is_active");
+
+  // Admin olmayan yetkili, bir admin'in aktiflik durumunu değiştiremez.
+  if (!canManageAdmin(session.profile?.role)) {
+    const { data: target } = await session.supabase.from("profiles").select("role").eq("id", id).maybeSingle();
+    if (target?.role === "admin") return fail("Bir yöneticinin durumunu yalnızca admin değiştirebilir.");
+  }
+
   return attempt(
     () => session.supabase.from("profiles").update({ is_active: isActive }).eq("id", id),
     isActive ? "Personel aktifleştirildi." : "Personel pasifleştirildi.",
     ["/personnel", "/admin"]
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Kayıt istekleri (self-servis kayıt onayı) — yetkili = admin veya takım lideri
+// ---------------------------------------------------------------------------
+export async function approveRegistration(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  const { session, denied } = await ensure("ops");
+  if (denied) return denied;
+  const target = getString(formData, "profile_id");
+  if (!target) return fail("Kayıt bulunamadı.");
+  const role = getEnum(formData, "role", userRoles) ?? "staff";
+  return attempt(
+    () =>
+      session.supabase.rpc("approve_registration", {
+        target,
+        new_role: role,
+        dept: getString(formData, "department_id"),
+        new_title: getString(formData, "title")
+      }),
+    "Kayıt onaylandı; personel artık giriş yapabilir.",
+    ["/registrations", "/personnel", "/admin", "/dashboard"]
+  );
+}
+
+export async function rejectRegistration(_: ActionResult, formData: FormData): Promise<ActionResult> {
+  const { session, denied } = await ensure("ops");
+  if (denied) return denied;
+  const target = getString(formData, "profile_id");
+  if (!target) return fail("Kayıt bulunamadı.");
+  return attempt(
+    () => session.supabase.rpc("reject_registration", { target }),
+    "Kayıt reddedildi.",
+    ["/registrations", "/dashboard"]
   );
 }
 
@@ -505,7 +624,7 @@ export async function updateOwnProfile(_: ActionResult, formData: FormData): Pro
 // Departmanlar
 // ---------------------------------------------------------------------------
 export async function createDepartment(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("admin");
+  const { session, denied } = await ensure("ops");
   if (denied) return denied;
   const name = getString(formData, "name");
   if (!name) return fail("Departman adı zorunludur.", { name: "Departman adı zorunludur." });
@@ -517,7 +636,7 @@ export async function createDepartment(_: ActionResult, formData: FormData): Pro
 }
 
 export async function updateDepartment(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("admin");
+  const { session, denied } = await ensure("ops");
   if (denied) return denied;
   const id = getString(formData, "id");
   const name = getString(formData, "name");
@@ -530,7 +649,7 @@ export async function updateDepartment(_: ActionResult, formData: FormData): Pro
 }
 
 export async function deleteDepartment(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("admin");
+  const { session, denied } = await ensure("ops");
   if (denied) return denied;
   const id = getString(formData, "id");
   if (!id) return fail("Kayıt bulunamadı.");

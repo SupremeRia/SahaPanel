@@ -5,11 +5,14 @@ import { ServiceWorkerRegister } from "@/components/pwa-register";
 import { themeInitScript } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
-  title: { default: "SahaPanel", template: "%s · SahaPanel" },
+  title: {
+    default: "Aytemiz Petrol Yakutiye Şubesi",
+    template: "%s · Aytemiz Petrol Yakutiye Şubesi"
+  },
   description: "Vardiyalı ekipler için duyuru, görev, arıza ve vardiya takip paneli.",
-  applicationName: "SahaPanel",
+  applicationName: "Aytemiz Petrol Yakutiye Şubesi",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "SahaPanel", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Aytemiz Petrol", statusBarStyle: "default" },
   formatDetection: { telephone: false }
 };
 
