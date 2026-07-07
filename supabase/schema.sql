@@ -695,3 +695,86 @@ using (bucket_id = 'shift-photos' and public.is_manager());
 drop policy if exists "Shift photos are public" on storage.objects;
 create policy "Shift photos are public"
 on storage.objects for select to public using (bucket_id = 'shift-photos');
+
+-- ===========================================================================
+-- v3.1 — Onay kapisini veritabani (RLS) katmaninda da zorunlu kil.
+-- Onaysiz/pasif kullanicilar; oturumlari gecerli olsa bile API uzerinden
+-- baskalarinin verisini okuyamaz/yazamaz. Yetki fonksiyonlari artik
+-- yalnizca aktif + onayli profilleri yetkili sayar.
+-- ===========================================================================
+
+-- Cagiran kullanici aktif ve onaylanmis mi?
+create or replace function public.is_approved()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and is_active and registration_status = 'approved'
+  )
+$$;
+
+-- Yetki fonksiyonlari: rol + aktiflik + onay birlikte aranir.
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role = 'admin' and is_active and registration_status = 'approved'
+  )
+$$;
+
+create or replace function public.is_manager()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid()
+      and role in ('admin', 'team_leader')
+      and is_active
+      and registration_status = 'approved'
+  )
+$$;
+
+-- Duyurular: yalnizca onayli kullanicilar okur.
+drop policy if exists "Authenticated users can read announcements" on public.announcements;
+create policy "Authenticated users can read announcements"
+on public.announcements for select to authenticated using (public.is_approved());
+
+-- Profiller: herkes kendi kaydini gorur; digerlerini yalnizca onayli kullanici
+-- gorebilir (yetkililer pasif/pending kayitlari da gorur).
+drop policy if exists "Users can read active profiles" on public.profiles;
+create policy "Users can read active profiles"
+on public.profiles for select to authenticated
+using (
+  id = auth.uid()
+  or (public.is_approved() and (is_active = true or public.is_manager()))
+);
+
+-- Vardiya gorselleri: yalnizca onayli kullanicilar okur.
+drop policy if exists "Authenticated can read shift boards" on public.shift_boards;
+create policy "Authenticated can read shift boards"
+on public.shift_boards for select to authenticated using (public.is_approved());
+
+-- Ariza olusturma: yalnizca onayli kullanici bildirim acabilir.
+drop policy if exists "Users can create faults" on public.faults;
+create policy "Users can create faults"
+on public.faults for insert to authenticated
+with check (reported_by = auth.uid() and public.is_approved());
+
+-- Duyuru okundu isareti: yalnizca onayli kullanici.
+drop policy if exists "Users can mark announcement read" on public.announcement_reads;
+create policy "Users can mark announcement read"
+on public.announcement_reads for insert to authenticated
+with check (user_id = auth.uid() and public.is_approved());

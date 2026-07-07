@@ -520,6 +520,16 @@ export async function updateProfile(_: ActionResult, formData: FormData): Promis
   const fullName = getString(formData, "full_name");
   const role = getEnum(formData, "role", userRoles) ?? "staff";
   if (!id || !fullName) return fail("Kullanıcı ve ad soyad zorunludur.");
+
+  // Admin olmayan yetkili, bir admin'i düzenleyemez veya admin rolü atayamaz.
+  // (DB guard bunu zaten engeller; burada net bir uyarı vererek yanıltıcı
+  // "başarılı" mesajını önlüyoruz.)
+  if (!canManageAdmin(session.profile?.role)) {
+    if (role === "admin") return fail("Admin rolünü yalnızca admin atayabilir.");
+    const { data: target } = await session.supabase.from("profiles").select("role").eq("id", id).maybeSingle();
+    if (target?.role === "admin") return fail("Bir yöneticiyi yalnızca admin düzenleyebilir.");
+  }
+
   return attempt(
     () =>
       session.supabase
@@ -543,6 +553,13 @@ export async function updateProfileActive(_: ActionResult, formData: FormData): 
   const id = getString(formData, "profile_id");
   if (!id) return fail("Kayıt bulunamadı.");
   const isActive = getBoolean(formData, "is_active");
+
+  // Admin olmayan yetkili, bir admin'in aktiflik durumunu değiştiremez.
+  if (!canManageAdmin(session.profile?.role)) {
+    const { data: target } = await session.supabase.from("profiles").select("role").eq("id", id).maybeSingle();
+    if (target?.role === "admin") return fail("Bir yöneticinin durumunu yalnızca admin değiştirebilir.");
+  }
+
   return attempt(
     () => session.supabase.from("profiles").update({ is_active: isActive }).eq("id", id),
     isActive ? "Personel aktifleştirildi." : "Personel pasifleştirildi.",
