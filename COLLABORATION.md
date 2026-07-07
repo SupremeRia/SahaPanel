@@ -1,43 +1,58 @@
-# SahaPanel Isbirligi Rehberi
+# SahaPanel İşbirliği Rehberi
 
-Bu dosya, projede birlikte calisacak kisilerin ayni duzeni takip etmesi icin hazirlandi.
+Bu dosya, projede birlikte çalışacak kişilerin aynı düzeni takip etmesi için hazırlandı.
 
 ## Proje hedefi
 
-SahaPanel; petrol istasyonu, market, saha ekibi ve vardiyali calisan ekiplerde WhatsApp gruplarinin yerine daha takip edilebilir bir is akisi kurar.
+SahaPanel; petrol istasyonu, market, saha ekibi ve vardiyalı çalışan ekiplerde WhatsApp gruplarının yerine daha takip edilebilir bir iş akışı kurar. Duyuru, görev, arıza, vardiya ve personel süreçlerini tek panelde toplar.
 
-## Is bolumu onerisi
+## Modüller ve yeni özellikler
+
+- **Duyurular:** Sabitleme (pinned) ve okundu takibi.
+- **Görevler:** Öncelik (Düşük / Normal / Yüksek / Acil), durum yönetimi ve geciken görev takibi.
+- **Arızalar:** Önem derecesi (Düşük / Orta / Yüksek / Kritik), fotoğraf yükleme ve büyütme (lightbox).
+- **Vardiyalar:** Liste ve takvim görünümü.
+- **Personel / Yetkili Paneli:** Rol ve departman yönetimi.
+- **Genel iyileştirmeler:** Tüm modüllerde CRUD, arama/filtre, koyu tema, anlık bildirim (toast), CSV dışa aktarma ve PWA kurulumu.
+
+## İş bölümü önerisi
 
 | Alan | Sorumluluk |
 | --- | --- |
-| Supabase | Tablolar, RLS politikalari, Storage bucket, Auth kullanicilari |
-| Frontend | Dashboard sayfalari, responsive menu, form ve liste ekranlari |
-| Operasyon | Duyuru okundu takibi, gorev durumlari, ariza sureci, vardiya gorunumu |
-| Test | Rol bazli ekran kontrolu, mobil gorunum, CRUD senaryolari |
+| Supabase | Tablolar, RLS politikaları, Storage bucket, Auth kullanıcıları, tetikleyiciler |
+| Frontend | Dashboard sayfaları, responsive menü, form ve liste ekranları, koyu tema |
+| Operasyon | Duyuru okundu takibi, görev durumları, arıza süreci, vardiya görünümü |
+| Test | Rol bazlı ekran kontrolü, mobil görünüm, CRUD ve filtre senaryoları |
 
-## Kod duzeni
+## Kod düzeni
 
-- `app/(dashboard)`: Panel sayfalari
-- `app/actions.ts`: Veri yazma ve guncelleme islemleri
-- `components`: Ortak arayuz bilesenleri
-- `lib`: Supabase istemcileri, rol yardimcilari ve format fonksiyonlari
-- `supabase/schema.sql`: Veritabani semasi ve RLS politikalari
+- `app/(dashboard)`: Panel sayfaları
+- `app/actions.ts`: Veri yazma, güncelleme ve silme işlemleri (server actions)
+- `components`: Ortak arayüz bileşenleri
+- `lib`: Supabase istemcileri, rol yardımcıları ve biçimlendirme fonksiyonları
+- `supabase/schema.sql`: Veritabanı şeması ve RLS politikaları
 
-## Gelistirme akisi
+## Geliştirme akışı
 
-1. Yeni ise baslamadan once ilgili sayfayi ve `app/actions.ts` dosyasini kontrol edin.
-2. Veritabani degisikligi varsa once `supabase/schema.sql` guncelleyin.
-3. UI degisikligi yaparken mobil gorunumu da kontrol edin.
-4. Rol bazli davranislari en az Admin, Takim Lideri ve Personel ile test edin.
-5. Pull request veya commit aciklamasinda hangi modullerin etkilendigini yazin.
+1. Yeni işe başlamadan önce ilgili sayfayı ve `app/actions.ts` dosyasını kontrol edin.
+2. Veritabanı değişikliği varsa önce `supabase/schema.sql` dosyasını güncelleyin.
+3. UI değişikliği yaparken mobil görünümü ve koyu temayı da kontrol edin.
+4. Rol bazlı davranışları en az Admin, Takım Lideri ve Personel ile test edin.
+5. Pull request veya commit açıklamasında hangi modüllerin etkilendiğini yazın.
 
 ## Kontrol listesi
 
-- [ ] Login Supabase Auth ile calisiyor.
-- [ ] Admin tum ekranlara erisebiliyor.
-- [ ] Takim Lideri duyuru, gorev ve ariza yonetebiliyor.
-- [ ] Personel duyuru okuyup ariza bildirimi acabiliyor.
+- [ ] Login Supabase Auth ile çalışıyor.
+- [ ] Admin tüm ekranlara erişebiliyor.
+- [ ] Takım Lideri duyuru, görev ve arıza yönetebiliyor.
+- [ ] Personel duyuru okuyup arıza bildirimi açabiliyor.
 - [ ] Duyuru okundu bilgisi kaydediliyor.
-- [ ] Gorev durumlari guncelleniyor.
-- [ ] Ariza fotograf yukleme alani test edildi.
-- [ ] Vardiya listesi mobilde okunabilir.
+- [ ] Görev durumları ve öncelikleri güncelleniyor; geciken görevler işaretleniyor.
+- [ ] Arıza fotoğraf yükleme ve büyütme (lightbox) test edildi.
+- [ ] Arıza önem derecesi doğru gösteriliyor.
+- [ ] Vardiya listesi ve takvim görünümü mobilde okunabilir.
+- [ ] Kayıt oluşturma, düzenleme ve silme (CRUD) tüm modüllerde çalışıyor.
+- [ ] Arama ve filtreler doğru sonuç veriyor.
+- [ ] Koyu tema tüm ekranlarda okunabilir.
+- [ ] CSV dışa aktarma beklenen veriyi üretiyor.
+- [ ] PWA kurulumu mobil cihazda çalışıyor.

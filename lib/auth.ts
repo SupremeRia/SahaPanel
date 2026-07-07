@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile } from "@/lib/types";
+import type { ProfileWithDepartment } from "@/lib/types";
 
 export async function getCurrentProfile() {
   const supabase = await createClient();
@@ -18,7 +18,7 @@ export async function getCurrentProfile() {
 
   return {
     user,
-    profile: data as (Profile & { departments?: { name: string } | null }) | null,
+    profile: (data as ProfileWithDepartment | null) ?? null,
     supabase
   };
 }

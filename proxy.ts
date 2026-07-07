@@ -6,5 +6,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]
+  matcher: [
+    // Auth kontrolunu; statik dosyalar, PWA dosyalari (manifest, service worker,
+    // cevrimdisi sayfasi) ve ikonlar disindaki tum yollara uygula.
+    "/((?!_next/static|_next/image|favicon.ico|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|html|txt|xml|woff2?)$).*)"
+  ]
 };
