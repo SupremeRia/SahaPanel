@@ -599,6 +599,10 @@ begin
          department_id = coalesce(dept, department_id),
          title = coalesce(nullif(new_title, ''), title)
    where id = target and registration_status = 'pending';
+
+  if not found then
+    raise exception 'Onay bekleyen kayit bulunamadi; kayit daha once islenmis olabilir.';
+  end if;
 end;
 $$;
 
@@ -621,6 +625,10 @@ begin
      set is_active = false,
          registration_status = 'rejected'
    where id = target and registration_status = 'pending';
+
+  if not found then
+    raise exception 'Onay bekleyen kayit bulunamadi; kayit daha once islenmis olabilir.';
+  end if;
 end;
 $$;
 
@@ -802,9 +810,9 @@ language plpgsql
 set search_path = public
 as $$
 begin
-  if new.status = 'completed' and old.status is distinct from 'completed' then
+  if new.status = 'Tamamlandi' and old.status is distinct from 'Tamamlandi' then
     new.completed_at := now();
-  elsif new.status is distinct from 'completed' then
+  elsif new.status is distinct from 'Tamamlandi' then
     new.completed_at := null;
   end if;
   return new;
@@ -817,9 +825,9 @@ language plpgsql
 set search_path = public
 as $$
 begin
-  if new.status = 'resolved' and old.status is distinct from 'resolved' then
+  if new.status = 'Cozuldu' and old.status is distinct from 'Cozuldu' then
     new.resolved_at := now();
-  elsif new.status is distinct from 'resolved' then
+  elsif new.status is distinct from 'Cozuldu' then
     new.resolved_at := null;
   end if;
   return new;
@@ -828,7 +836,6 @@ $$;
 
 create index if not exists announcements_created_by_idx on public.announcements(created_by);
 create index if not exists tasks_created_by_idx on public.tasks(created_by);
-create index if not exists registration_requests_reviewed_by_idx on public.registration_requests(reviewed_by);
 create index if not exists shift_boards_created_by_idx on public.shift_boards(created_by);
 
 drop policy if exists "Fault photos are public" on storage.objects;
@@ -848,7 +855,7 @@ grant execute on function public.is_admin() to authenticated;
 grant execute on function public.is_manager() to authenticated;
 grant execute on function public.is_approved() to authenticated;
 
-revoke execute on function public.approve_registration(uuid, user_role, uuid) from public, anon;
+revoke execute on function public.approve_registration(uuid, public.user_role, uuid, text) from public, anon;
 revoke execute on function public.reject_registration(uuid) from public, anon;
-grant execute on function public.approve_registration(uuid, user_role, uuid) to authenticated;
+grant execute on function public.approve_registration(uuid, public.user_role, uuid, text) to authenticated;
 grant execute on function public.reject_registration(uuid) to authenticated;

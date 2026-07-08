@@ -570,23 +570,50 @@ export async function updateProfileActive(_: ActionResult, formData: FormData): 
 // ---------------------------------------------------------------------------
 // Kayıt istekleri (self-servis kayıt onayı) — yetkili = admin veya takım lideri
 // ---------------------------------------------------------------------------
+// RPC "başarılı" dönse bile satır güncellenmemiş olabilir (ör. şema eski, kayıt
+// zaten işlenmiş). Onayın gerçekten veritabanına yazıldığını okuyarak doğrula.
+async function verifyRegistrationStatus(
+  session: Session,
+  target: string,
+  expected: "approved" | "rejected"
+): Promise<ActionResult | null> {
+  const { data, error } = await session.supabase
+    .from("profiles")
+    .select("registration_status")
+    .eq("id", target)
+    .maybeSingle();
+  if (error) return fail(describeError(error));
+  if (!data) return fail("Kullanıcı profili bulunamadı.");
+  if (data.registration_status !== expected) {
+    return fail(
+      "İşlem veritabanına kaydedilemedi. Kayıt onay bekliyor durumunda olmayabilir veya Supabase şeması güncel değil; " +
+        "lütfen supabase/schema.sql dosyasını Supabase SQL editöründe yeniden çalıştırın."
+    );
+  }
+  return null;
+}
+
 export async function approveRegistration(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const { session, denied } = await ensure("ops");
   if (denied) return denied;
   const target = getString(formData, "profile_id");
   if (!target) return fail("Kayıt bulunamadı.");
   const role = getEnum(formData, "role", userRoles) ?? "staff";
-  return attempt(
-    () =>
-      session.supabase.rpc("approve_registration", {
-        target,
-        new_role: role,
-        dept: getString(formData, "department_id"),
-        new_title: getString(formData, "title")
-      }),
-    "Kayıt onaylandı; personel artık giriş yapabilir.",
-    ["/registrations", "/personnel", "/admin", "/dashboard"]
-  );
+  try {
+    const { error } = await session.supabase.rpc("approve_registration", {
+      target,
+      new_role: role,
+      dept: getString(formData, "department_id"),
+      new_title: getString(formData, "title")
+    });
+    if (error) return fail(describeError(error));
+    const notApplied = await verifyRegistrationStatus(session, target, "approved");
+    if (notApplied) return notApplied;
+  } catch (error) {
+    return fail(describeError(error));
+  }
+  ["/registrations", "/personnel", "/admin", "/dashboard"].forEach((path) => revalidatePath(path));
+  return ok("Kayıt onaylandı; personel artık giriş yapabilir.");
 }
 
 export async function rejectRegistration(_: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -594,11 +621,16 @@ export async function rejectRegistration(_: ActionResult, formData: FormData): P
   if (denied) return denied;
   const target = getString(formData, "profile_id");
   if (!target) return fail("Kayıt bulunamadı.");
-  return attempt(
-    () => session.supabase.rpc("reject_registration", { target }),
-    "Kayıt reddedildi.",
-    ["/registrations", "/dashboard"]
-  );
+  try {
+    const { error } = await session.supabase.rpc("reject_registration", { target });
+    if (error) return fail(describeError(error));
+    const notApplied = await verifyRegistrationStatus(session, target, "rejected");
+    if (notApplied) return notApplied;
+  } catch (error) {
+    return fail(describeError(error));
+  }
+  ["/registrations", "/dashboard"].forEach((path) => revalidatePath(path));
+  return ok("Kayıt reddedildi.");
 }
 
 export async function updateOwnProfile(_: ActionResult, formData: FormData): Promise<ActionResult> {

@@ -53,7 +53,7 @@ type AnnouncementCard = {
 };
 
 export default async function DashboardPage() {
-  const { supabase, profile } = await getCurrentProfile();
+  const { supabase, profile, user } = await getCurrentProfile();
   const canManage = canManageOperations(profile?.role);
   const isAdmin = canManageAdmin(profile?.role);
   const today = new Date().toISOString().slice(0, 10);
@@ -62,6 +62,7 @@ export default async function DashboardPage() {
     { count: openTaskCount },
     { count: openFaultCount },
     { count: announcementCount },
+    { count: readAnnouncementCount },
     { count: activePersonnelCount },
     { data: shiftsData },
     { data: tasksData },
@@ -71,6 +72,10 @@ export default async function DashboardPage() {
     supabase.from("tasks").select("*", { count: "exact", head: true }).neq("status", "Tamamlandi"),
     supabase.from("faults").select("*", { count: "exact", head: true }).neq("status", "Cozuldu"),
     supabase.from("announcements").select("*", { count: "exact", head: true }),
+    supabase
+      .from("announcement_reads")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id),
     supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_active", true),
     supabase
       .from("shifts")
@@ -89,6 +94,9 @@ export default async function DashboardPage() {
       .order("created_at", { ascending: false })
       .limit(3)
   ]);
+
+  // Okunmamış duyuru = toplam duyuru - kullanıcının okuduğu duyurular (kullanıcı bazlı)
+  const unreadAnnouncementCount = Math.max(0, (announcementCount ?? 0) - (readAnnouncementCount ?? 0));
 
   const shifts = (shiftsData ?? []) as unknown as ShiftWithRelations[];
   const allTasks = (tasksData ?? []) as unknown as TaskWithRelations[];
@@ -167,12 +175,12 @@ export default async function DashboardPage() {
           hint={`${activePersonnelCount ?? 0} aktif personel`}
         />
         <StatCard
-          label="Duyuru"
-          value={announcementCount ?? 0}
+          label="Yeni duyuru"
+          value={unreadAnnouncementCount}
           icon={Bell}
           tone="purple"
           href="/announcements"
-          hint="Toplam yayın"
+          hint={unreadAnnouncementCount ? "Okunmamış duyuru" : "Tümü okundu"}
         />
       </div>
 

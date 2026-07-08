@@ -120,8 +120,6 @@ export function ShiftsClient({
 
   return (
     <div className="grid gap-4">
-      <ShiftBoards boards={boards} isManager={isManager} />
-
       <Panel className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Segmented
@@ -188,6 +186,8 @@ export function ShiftsClient({
           onToday={() => setWeekStart(startOfWeek(new Date()))}
         />
       )}
+
+      <ShiftBoards boards={boards} isManager={isManager} />
     </div>
   );
 }
