@@ -4,7 +4,10 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata = { title: "Giriş yap" };
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams?: Promise<{ mode?: string }> }) {
+  const params = await searchParams;
+  const mode = params?.mode === "register" ? "register" : "login";
+
   // Kayit formundaki departman listesi (anonim okumaya acik).
   const supabase = await createClient();
   const { data: departments } = await supabase
@@ -26,7 +29,7 @@ export default async function LoginPage() {
               <p className="text-sm text-muted">Saha ekipleri için düzenli iş takibi</p>
             </div>
           </div>
-          <AuthTabs departments={departments ?? []} />
+          <AuthTabs departments={departments ?? []} mode={mode} />
           <p className="mt-6 text-center text-xs text-muted-2">
             Kayıt olduktan sonra yetkili onayı ile girişiniz aktifleşir.
           </p>

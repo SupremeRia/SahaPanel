@@ -778,3 +778,77 @@ drop policy if exists "Users can mark announcement read" on public.announcement_
 create policy "Users can mark announcement read"
 on public.announcement_reads for insert to authenticated
 with check (user_id = auth.uid() and public.is_approved());
+
+-- ===========================================================================
+-- v3.2 - Production hardening.
+-- Locks function search paths, limits RPC exposure, adds FK indexes, and removes
+-- broad public object read policies from private operational buckets.
+-- ===========================================================================
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+create or replace function public.stamp_task_completion()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.status = 'completed' and old.status is distinct from 'completed' then
+    new.completed_at := now();
+  elsif new.status is distinct from 'completed' then
+    new.completed_at := null;
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function public.stamp_fault_resolution()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.status = 'resolved' and old.status is distinct from 'resolved' then
+    new.resolved_at := now();
+  elsif new.status is distinct from 'resolved' then
+    new.resolved_at := null;
+  end if;
+  return new;
+end;
+$$;
+
+create index if not exists announcements_created_by_idx on public.announcements(created_by);
+create index if not exists tasks_created_by_idx on public.tasks(created_by);
+create index if not exists registration_requests_reviewed_by_idx on public.registration_requests(reviewed_by);
+create index if not exists shift_boards_created_by_idx on public.shift_boards(created_by);
+
+drop policy if exists "Fault photos are public" on storage.objects;
+drop policy if exists "Shift photos are public" on storage.objects;
+drop policy if exists "Shift images are public" on storage.objects;
+
+revoke execute on function public.set_updated_at() from public, anon, authenticated;
+revoke execute on function public.stamp_task_completion() from public, anon, authenticated;
+revoke execute on function public.stamp_fault_resolution() from public, anon, authenticated;
+
+revoke execute on function public.current_user_role() from public, anon;
+revoke execute on function public.is_admin() from public, anon;
+revoke execute on function public.is_manager() from public, anon;
+revoke execute on function public.is_approved() from public, anon;
+grant execute on function public.current_user_role() to authenticated;
+grant execute on function public.is_admin() to authenticated;
+grant execute on function public.is_manager() to authenticated;
+grant execute on function public.is_approved() to authenticated;
+
+revoke execute on function public.approve_registration(uuid, user_role, uuid) from public, anon;
+revoke execute on function public.reject_registration(uuid) from public, anon;
+grant execute on function public.approve_registration(uuid, user_role, uuid) to authenticated;
+grant execute on function public.reject_registration(uuid) to authenticated;
