@@ -1,6 +1,7 @@
-import { Bell, CalendarDays, ClipboardList, Fuel, ShieldCheck, Siren } from "lucide-react";
+import { Bell, CalendarDays, ClipboardList, ShieldCheck, Siren } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AuthTabs } from "@/components/auth-tabs";
+import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata = { title: "Giriş yap" };
@@ -11,21 +12,6 @@ const heroFeatures = [
   { icon: Siren, label: "Arızalar", hint: "Saha sorunlarını raporla" },
   { icon: CalendarDays, label: "Vardiyalar", hint: "Haftalık planı görüntüle" }
 ];
-
-// Marka amblemi (kurumsal monogram) — hem hero hem mobil baslikta kullanilir.
-function BrandMark({ size = "md" }: { size?: "md" | "lg" }) {
-  const box = size === "lg" ? "h-14 w-14 rounded-2xl" : "h-12 w-12 rounded-xl";
-  const icon = size === "lg" ? "h-7 w-7" : "h-6 w-6";
-  return (
-    <span
-      className={`relative grid ${box} place-items-center bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-glow ring-1 ring-gold-400/40`}
-      aria-hidden
-    >
-      <Fuel className={icon} />
-      <span className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-t from-black/10 to-white/10" />
-    </span>
-  );
-}
 
 export default async function LoginPage({ searchParams }: { searchParams?: Promise<{ mode?: string }> }) {
   const params = await searchParams;

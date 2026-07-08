@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
 import { canManageOperations, roleLabels } from "@/lib/types";
 import { Avatar } from "@/components/ui";
+import { BrandMark } from "@/components/brand-mark";
 import { MobileMenu, MobileNav, NavList } from "@/components/nav-list";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PresenceHeartbeat } from "@/components/presence-heartbeat";
@@ -63,9 +64,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <Link href="/dashboard" className="focus-ring flex items-center gap-3 rounded-md">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-600 font-bold text-white shadow-sm ring-1 ring-gold-400/30">
-        AP
-      </div>
+      <BrandMark size="md" />
       {compact ? (
         <p className="text-base font-bold text-ink">Aytemiz Petrol</p>
       ) : (

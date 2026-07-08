@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Clock, ShieldX } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import { signOut } from "@/app/actions";
+import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata = { title: "Onay bekleniyor" };
@@ -18,9 +19,7 @@ export default async function PendingPage() {
       <ThemeToggle className="absolute right-4 top-4" />
       <div className="w-full max-w-md rounded-xl border border-line bg-surface p-8 text-center shadow-card">
         <div className="mb-3 flex items-center justify-center gap-3">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-brand-600 font-bold text-white">
-            AP
-          </div>
+          <BrandMark size="md" />
           <div className="text-left">
             <p className="text-base font-bold text-ink">Aytemiz Petrol</p>
             <p className="text-xs text-muted">Yakutiye Şubesi</p>
