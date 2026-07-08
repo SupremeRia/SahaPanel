@@ -11,8 +11,9 @@ SahaPanel; petrol istasyonu, market, saha ekibi ve vardiyalı çalışan ekipler
 - **Duyurular:** Sabitleme (pinned) ve okundu takibi.
 - **Görevler:** Öncelik (Düşük / Normal / Yüksek / Acil), durum yönetimi ve geciken görev takibi.
 - **Arızalar:** Önem derecesi (Düşük / Orta / Yüksek / Kritik), fotoğraf yükleme ve büyütme (lightbox).
-- **Vardiyalar:** Liste ve takvim görünümü.
+- **Vardiyalar:** Haftalık plan görseli paylaşımı (güncellendi 2026-07-08: eski liste/takvim/CRUD kaldırıldı, bkz. [CHANGELOG.md](CHANGELOG.md)).
 - **Personel / Yetkili Paneli:** Rol ve departman yönetimi.
+- **Çevrimiçi personel takibi (2026-07-08 eklendi):** Dashboard'da anlık çevrimiçi personel kartı; giriş/çıkış ve heartbeat ile `profiles.is_online`/`last_seen_at` güncellenir.
 - **Genel iyileştirmeler:** Tüm modüllerde CRUD, arama/filtre, koyu tema, anlık bildirim (toast), CSV dışa aktarma ve PWA kurulumu.
 
 ## İş bölümü önerisi
