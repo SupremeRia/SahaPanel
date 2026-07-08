@@ -2,6 +2,14 @@
 
 Bu dosya, projede yapılan önemli değişikliklerin kısa ve tarihli özetini tutar. Ayrıntılı kod düzeyi geçmiş için `git log` kullanın.
 
+## 2026-07-08 (2. kontrol — GitHub/Vercel/Supabase bağlantı doğrulama)
+
+- **GitHub:** `claude/shifts-cleanup-online-staff-bggahc` branch'i PR #4 olarak main'e merge edildi (merge commit `f1c4e02`, merge eden: SupremeRia). Repo bağlantısı ve erişim sorunsuz.
+- **Vercel:** GitHub entegrasyonu doğru repoya (`Bromer-Coding/SahaPanel`) bağlı olduğu doğrulandı; main'e merge otomatik olarak yeni bir production deploy tetikledi (`dpl_Fr5eeABrosEzMtCQY61epBvDsTfo`, READY, build hatasız). Framework (Next.js), build/output ayarları (framework varsayılanları) ve env değişkenleri (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) doğru ve eksiksiz.
+- **Supabase — bulunan gerçek sorun:** Postgres loglarında her 60 saniyede bir tekrarlayan `current transaction is aborted` hatası tespit edildi. Kök neden bulundu: uygulama kodu değil, Supabase'in kendi iç izleme bağlantısı (`postgres_exporter`) takılı kalmış durumda. Kullanıcı trafiğini etkilemiyor (REST API logları tamamen 200 OK). Ayrıntı ve öneri için [TODO.md](TODO.md).
+- **Doğrulanan özellikler (main üzerinde, bozulmamış):** Kayıt onayı RPC doğrulaması, duyuru okunmamış sayacı (kullanıcı bazlı), Vardiyalar sayfası (sadece haftalık plan görseli), Çevrimiçi Personeller kartı, Supabase client env kullanımı (`lib/supabase/browser.ts`, `lib/supabase/server.ts`).
+- Kod değişikliği yapılmadı; bu tur sadece doğrulama ve dokümantasyon güncellemesiydi.
+
 ## 2026-07-08
 
 - **Vardiyalar sayfası sadeleştirildi** (branch `claude/shifts-cleanup-online-staff-bggahc`, commit `51cfb14`): Liste/takvim görünümü, arama/filtre ve "Yeni vardiya" formu kaldırıldı; sadece haftalık plan görselini yükleme/galeri alanı kaldı. `createShift`/`updateShift`/`deleteShift` server action'ları ve ilişkili kullanılmayan kod temizlendi.
