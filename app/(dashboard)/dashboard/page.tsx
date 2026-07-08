@@ -84,7 +84,7 @@ export default async function DashboardPage() {
     supabase.from("faults").select("id, status, severity, category"),
     supabase
       .from("announcements")
-      .select("id, title, pinned, created_at, profiles(full_name)")
+      .select("id, title, pinned, created_at, profiles!announcements_created_by_fkey(full_name)")
       .order("pinned", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(3)

@@ -13,7 +13,9 @@ export default async function AnnouncementsPage() {
   const [{ data: announcements }, { count: totalActive }] = await Promise.all([
     supabase
       .from("announcements")
-      .select("*, profiles(full_name), announcement_reads(user_id, profiles(full_name))")
+      .select(
+        "*, profiles!announcements_created_by_fkey(full_name), announcement_reads(user_id, profiles!announcement_reads_user_id_fkey(full_name))"
+      )
       .order("pinned", { ascending: false })
       .order("created_at", { ascending: false }),
     supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_active", true)
