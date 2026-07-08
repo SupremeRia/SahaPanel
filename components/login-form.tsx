@@ -29,12 +29,19 @@ export function LoginForm() {
     setLoading(true);
     setError("");
     const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (signInError) {
       setLoading(false);
       setError("E-posta veya şifre hatalı.");
       return;
+    }
+
+    if (data.user) {
+      await supabase
+        .from("profiles")
+        .update({ is_online: true, last_seen_at: new Date().toISOString() })
+        .eq("id", data.user.id);
     }
 
     router.replace("/dashboard");

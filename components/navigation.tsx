@@ -5,6 +5,7 @@ import { canManageOperations, roleLabels } from "@/lib/types";
 import { Avatar } from "@/components/ui";
 import { MobileMenu, MobileNav, NavList } from "@/components/nav-list";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PresenceHeartbeat } from "@/components/presence-heartbeat";
 import { signOut } from "@/app/actions";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
@@ -15,6 +16,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-canvas">
+      <PresenceHeartbeat />
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r border-line bg-surface px-4 py-5 lg:flex">
         <Brand />
         <div className="flex-1 overflow-y-auto">

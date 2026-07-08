@@ -858,4 +858,16 @@ grant execute on function public.is_approved() to authenticated;
 revoke execute on function public.approve_registration(uuid, public.user_role, uuid, text) from public, anon;
 revoke execute on function public.reject_registration(uuid) from public, anon;
 grant execute on function public.approve_registration(uuid, public.user_role, uuid, text) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Cevrimici personel takibi (dashboard "Cevrimici Personeller" karti)
+-- Giriste is_online=true/last_seen_at=now(), cikista is_online=false yapilir;
+-- ayrica panel acikken periyodik "heartbeat" ile last_seen_at tazelenir.
+-- Dashboard sorgusu is_online = true VE last_seen_at yakin zamanli olanlari
+-- "cevrimici" sayar, boylece kapanan sekmeler bir sure sonra otomatik dusuk.
+-- ---------------------------------------------------------------------------
+alter table public.profiles add column if not exists is_online boolean not null default false;
+alter table public.profiles add column if not exists last_seen_at timestamptz;
+
+create index if not exists profiles_is_online_idx on public.profiles(is_online, last_seen_at);
 grant execute on function public.reject_registration(uuid) to authenticated;

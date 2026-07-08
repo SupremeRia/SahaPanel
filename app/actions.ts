@@ -78,9 +78,19 @@ function storagePathFromUrl(url: string, bucket: string): string | null {
 // Kimlik
 // ---------------------------------------------------------------------------
 export async function signOut() {
-  const { supabase } = await getCurrentProfile();
+  const { supabase, user } = await getCurrentProfile();
+  await supabase.from("profiles").update({ is_online: false, last_seen_at: new Date().toISOString() }).eq("id", user.id);
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+// Panel acikken periyodik cagrilir; kullanicinin cevrimici/son aktiflik bilgisini tazeler.
+export async function pingPresence() {
+  const { supabase, user } = await getCurrentProfile();
+  await supabase
+    .from("profiles")
+    .update({ is_online: true, last_seen_at: new Date().toISOString() })
+    .eq("id", user.id);
 }
 
 // ---------------------------------------------------------------------------
@@ -373,96 +383,6 @@ export async function deleteFault(_: ActionResult, formData: FormData): Promise<
 // ---------------------------------------------------------------------------
 // Vardiyalar
 // ---------------------------------------------------------------------------
-export async function createShift(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("ops");
-  if (denied) return denied;
-  const shiftDate = getString(formData, "shift_date");
-  const profileId = getString(formData, "profile_id");
-  const startsAt = getString(formData, "starts_at");
-  const endsAt = getString(formData, "ends_at");
-  if (!shiftDate || !profileId || !startsAt || !endsAt) {
-    return fail("Tarih, personel, başlangıç ve bitiş zorunludur.");
-  }
-
-  let photoUrl: string | null = null;
-  const file = formData.get("photo");
-  if (file instanceof File && file.size > 0) {
-    const upload = await uploadImage(session.supabase, "shift-photos", session.user.id, file);
-    if (upload.error) return fail(upload.error, { photo: upload.error });
-    photoUrl = upload.url ?? null;
-  }
-
-  return attempt(
-    () =>
-      session.supabase.from("shifts").insert({
-        shift_date: shiftDate,
-        profile_id: profileId,
-        starts_at: startsAt,
-        ends_at: endsAt,
-        is_leave: getBoolean(formData, "is_leave"),
-        note: getString(formData, "note"),
-        photo_url: photoUrl
-      }),
-    "Vardiya eklendi.",
-    ["/shifts", "/dashboard"]
-  );
-}
-
-export async function updateShift(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("ops");
-  if (denied) return denied;
-  const id = getString(formData, "id");
-  const shiftDate = getString(formData, "shift_date");
-  const profileId = getString(formData, "profile_id");
-  const startsAt = getString(formData, "starts_at");
-  const endsAt = getString(formData, "ends_at");
-  if (!id) return fail("Kayıt bulunamadı.");
-  if (!shiftDate || !profileId || !startsAt || !endsAt) {
-    return fail("Tarih, personel, başlangıç ve bitiş zorunludur.");
-  }
-
-  // Mevcut fotografi koru; yeni foto yuklenirse degistir; "kaldir" isaretliyse sil.
-  let photoUrl = getString(formData, "photo_url");
-  const file = formData.get("photo");
-  if (file instanceof File && file.size > 0) {
-    const upload = await uploadImage(session.supabase, "shift-photos", session.user.id, file);
-    if (upload.error) return fail(upload.error, { photo: upload.error });
-    photoUrl = upload.url ?? photoUrl;
-  } else if (getBoolean(formData, "remove_photo")) {
-    photoUrl = null;
-  }
-
-  return attempt(
-    () =>
-      session.supabase
-        .from("shifts")
-        .update({
-          shift_date: shiftDate,
-          profile_id: profileId,
-          starts_at: startsAt,
-          ends_at: endsAt,
-          is_leave: getBoolean(formData, "is_leave"),
-          note: getString(formData, "note"),
-          photo_url: photoUrl
-        })
-        .eq("id", id),
-    "Vardiya güncellendi.",
-    ["/shifts", "/dashboard"]
-  );
-}
-
-export async function deleteShift(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("ops");
-  if (denied) return denied;
-  const id = getString(formData, "id");
-  if (!id) return fail("Kayıt bulunamadı.");
-  return attempt(
-    () => session.supabase.from("shifts").delete().eq("id", id),
-    "Vardiya silindi.",
-    ["/shifts", "/dashboard"]
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Vardiya görselleri (haftalık plan — Excel çıktısı/fotoğraf)
 // ---------------------------------------------------------------------------

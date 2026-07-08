@@ -8,7 +8,8 @@ import {
   ShieldCheck,
   Siren,
   UserRound,
-  Users
+  Users,
+  Wifi
 } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import {
@@ -27,10 +28,12 @@ import {
   type FaultStatus,
   type ShiftWithRelations,
   type TaskWithRelations,
-  type Tone
+  type Tone,
+  type UserRole
 } from "@/lib/types";
 import { formatDate, formatTime, greeting, isOverdue, timeAgo } from "@/lib/utils";
 import {
+  Avatar,
   Badge,
   EmptyState,
   PageHeader,
@@ -51,12 +54,17 @@ type AnnouncementCard = {
   created_at: string;
   profiles?: { full_name: string } | null;
 };
+type OnlinePerson = { id: string; full_name: string; role: UserRole; title: string | null };
+
+// Bir kullanicinin heartbeat'i bu sureden eski ise cevrimdisi sayilir (kapanan sekme vb.).
+const ONLINE_THRESHOLD_MS = 3 * 60 * 1000;
 
 export default async function DashboardPage() {
   const { supabase, profile, user } = await getCurrentProfile();
   const canManage = canManageOperations(profile?.role);
   const isAdmin = canManageAdmin(profile?.role);
   const today = new Date().toISOString().slice(0, 10);
+  const onlineSince = new Date(new Date().getTime() - ONLINE_THRESHOLD_MS).toISOString();
 
   const [
     { count: openTaskCount },
@@ -67,7 +75,8 @@ export default async function DashboardPage() {
     { data: shiftsData },
     { data: tasksData },
     { data: faultsData },
-    { data: announcementsData }
+    { data: announcementsData },
+    { data: onlineData }
   ] = await Promise.all([
     supabase.from("tasks").select("*", { count: "exact", head: true }).neq("status", "Tamamlandi"),
     supabase.from("faults").select("*", { count: "exact", head: true }).neq("status", "Cozuldu"),
@@ -92,8 +101,17 @@ export default async function DashboardPage() {
       .select("id, title, pinned, created_at, profiles!announcements_created_by_fkey(full_name)")
       .order("pinned", { ascending: false })
       .order("created_at", { ascending: false })
-      .limit(3)
+      .limit(3),
+    supabase
+      .from("profiles")
+      .select("id, full_name, role, title")
+      .eq("is_active", true)
+      .eq("is_online", true)
+      .gte("last_seen_at", onlineSince)
+      .order("full_name")
   ]);
+
+  const onlinePeople = (onlineData ?? []) as OnlinePerson[];
 
   // Okunmamış duyuru = toplam duyuru - kullanıcının okuduğu duyurular (kullanıcı bazlı)
   const unreadAnnouncementCount = Math.max(0, (announcementCount ?? 0) - (readAnnouncementCount ?? 0));
@@ -262,6 +280,48 @@ export default async function DashboardPage() {
           )}
         </Panel>
       </div>
+
+      <Panel>
+        <SectionTitle
+          title="Çevrimiçi Personeller"
+          description="Panele şu anda giriş yapmış olan ekip üyeleri"
+          action={
+            onlinePeople.length ? (
+              <Badge tone="green" dot>
+                {onlinePeople.length} çevrimiçi
+              </Badge>
+            ) : undefined
+          }
+        />
+        {onlinePeople.length ? (
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {onlinePeople.map((person) => (
+              <div key={person.id} className="flex items-center gap-3 rounded-md border border-line p-3">
+                <div className="relative shrink-0">
+                  <Avatar name={person.full_name} size="sm" />
+                  <span
+                    className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface bg-brand-500"
+                    aria-hidden
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-ink">{person.full_name}</p>
+                  <p className="truncate text-xs text-muted-2">
+                    {roleLabels[person.role]}
+                    {person.title ? ` · ${person.title}` : ""}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={Wifi}
+            title="Şu anda çevrimiçi personel yok"
+            description="Panele giriş yapan ekip üyeleri burada görünecek."
+          />
+        )}
+      </Panel>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Panel>
