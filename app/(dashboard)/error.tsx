@@ -19,14 +19,13 @@ export default function DashboardError({
 
   return (
     <div className="grid min-h-[60vh] place-items-center px-4">
-      <div className="w-full max-w-md rounded-xl border border-line bg-surface p-8 text-center shadow-card">
+      <div className="w-full max-w-md rounded-lg border border-line bg-surface p-8 text-center shadow-card">
         <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-signal-red/12 text-signal-red dark:bg-signal-red/20 dark:text-red-300">
           <AlertTriangle className="h-7 w-7" aria-hidden />
         </span>
         <h1 className="text-xl font-semibold text-ink">Bir şeyler ters gitti.</h1>
         <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
-          Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin; sorun sürerse birazdan yeniden
-          yükleyin.
+          Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin; sorun sürerse birazdan yeniden yükleyin.
         </p>
         {error.digest ? (
           <p className="mt-3 font-mono text-xs text-muted-2">Hata kodu: {error.digest}</p>

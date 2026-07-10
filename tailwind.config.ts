@@ -20,16 +20,22 @@ const config: Config = {
         ink: withVar("--ink"),
         muted: withVar("--muted"),
         "muted-2": withVar("--muted-2"),
-        // Sabit marka renkleri
-        field: "#F4F7F9",
+        // Sabit marka renkleri — mat kirmizi vurgu
+        field: "#F4F5F7",
         brand: {
-          50: "#E9F7F1",
-          100: "#CFEFE0",
-          200: "#A6E0C6",
-          400: "#3CB587",
-          500: "#1D9A6C",
-          600: "#147C58",
-          700: "#0E6045"
+          50: "#F7EAEA",
+          100: "#EFD2D1",
+          200: "#E0A9A7",
+          400: "#C0514D",
+          500: "#B23B37",
+          600: "#9A2F2C",
+          700: "#7E2523"
+        },
+        // Ince detay / ikon vurgulari icin altin
+        gold: {
+          300: "#E6CE86",
+          400: "#D4AF37",
+          500: "#BE9A2C"
         },
         amber: {
           400: "#E6A23C",
@@ -42,9 +48,10 @@ const config: Config = {
         }
       },
       boxShadow: {
-        panel: "0 14px 40px rgba(23, 32, 42, 0.08)",
-        card: "0 1px 2px rgba(23, 32, 42, 0.06), 0 1px 3px rgba(23, 32, 42, 0.04)",
-        pop: "0 12px 32px rgba(23, 32, 42, 0.16)"
+        panel: "0 14px 34px rgba(15, 23, 42, 0.12)",
+        card: "0 1px 2px rgba(15, 23, 42, 0.08)",
+        pop: "0 18px 42px rgba(15, 23, 42, 0.22)",
+        glow: "0 0 0 1px rgba(178, 59, 55, 0.28), 0 16px 38px rgba(15, 23, 42, 0.18)"
       },
       keyframes: {
         "toast-in": {
@@ -62,13 +69,25 @@ const config: Config = {
         "overlay-in": {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" }
+        },
+        // Login formu yumusak acilis
+        reveal: {
+          "0%": { opacity: "0", transform: "translateY(18px) scale(0.985)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" }
+        },
+        // Ilk ekrandaki butonlarin yumusak girisi
+        "reveal-down": {
+          "0%": { opacity: "0", transform: "translateY(-10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" }
         }
       },
       animation: {
         "toast-in": "toast-in 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
         "fade-in": "fade-in 0.3s ease-out",
         "slide-up": "slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-        "overlay-in": "overlay-in 0.15s ease-out"
+        "overlay-in": "overlay-in 0.15s ease-out",
+        reveal: "reveal 0.42s cubic-bezier(0.16, 1, 0.3, 1)",
+        "reveal-down": "reveal-down 0.42s cubic-bezier(0.16, 1, 0.3, 1)"
       }
     }
   },

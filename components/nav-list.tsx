@@ -43,7 +43,7 @@ export function NavList({ isManager }: { isManager: boolean }) {
   const pathname = usePathname();
   const visible = useVisible(isManager);
   return (
-    <nav className="mt-8 grid gap-1">
+    <nav className="mt-7 grid gap-0.5">
       {visible.map(({ href, label, icon: Icon }) => {
         const active = isActive(pathname, href);
         return (
@@ -52,10 +52,10 @@ export function NavList({ isManager }: { isManager: boolean }) {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "focus-ring flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition",
+              "focus-ring flex items-center gap-3 rounded-md border-l-2 px-3 py-2 text-sm font-medium transition",
               active
-                ? "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200"
-                : "text-muted hover:bg-surface-2 hover:text-ink"
+                ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200"
+                : "border-transparent text-muted hover:bg-surface-2 hover:text-ink"
             )}
           >
             <Icon className="h-5 w-5 shrink-0" aria-hidden />

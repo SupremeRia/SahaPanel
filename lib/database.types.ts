@@ -33,6 +33,8 @@ export interface Database {
           phone: string | null;
           is_active: boolean;
           registration_status: RegistrationStatus;
+          is_online: boolean;
+          last_seen_at: string | null;
         } & Timestamps;
         Insert: {
           id: string;
@@ -43,6 +45,8 @@ export interface Database {
           phone?: string | null;
           is_active?: boolean;
           registration_status?: RegistrationStatus;
+          is_online?: boolean;
+          last_seen_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -55,6 +59,8 @@ export interface Database {
           phone?: string | null;
           is_active?: boolean;
           registration_status?: RegistrationStatus;
+          is_online?: boolean;
+          last_seen_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

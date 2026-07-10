@@ -1,12 +1,7 @@
 import { redirect } from "next/navigation";
 import { UserCheck } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
-import {
-  canGrantAdmin,
-  canManageOperations,
-  type Department,
-  type ProfileWithDepartment
-} from "@/lib/types";
+import { canGrantAdmin, canManageOperations, type Department, type ProfileWithDepartment } from "@/lib/types";
 import { PageHeader } from "@/components/ui";
 import { RegistrationsClient } from "./registrations-client";
 

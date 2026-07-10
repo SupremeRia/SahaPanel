@@ -17,7 +17,10 @@ export function SearchInput({
 }) {
   return (
     <div className={cn("relative", className)}>
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2" aria-hidden />
+      <Search
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2"
+        aria-hidden
+      />
       <input
         type="search"
         value={value}
@@ -77,7 +80,9 @@ export function Segmented<T extends string>({
               <span
                 className={cn(
                   "rounded-full px-1.5 text-xs font-semibold",
-                  active ? "bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200" : "bg-surface text-muted-2"
+                  active
+                    ? "bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-200"
+                    : "bg-surface text-muted-2"
                 )}
               >
                 {option.count}

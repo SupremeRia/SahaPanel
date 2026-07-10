@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   canManageAdmin,
   canManageOperations,
@@ -21,7 +22,9 @@ import { getBoolean, getEnum, getString, validatePhoto } from "@/lib/validation"
 // ---------------------------------------------------------------------------
 type Session = Awaited<ReturnType<typeof getCurrentProfile>>;
 
-async function ensure(kind: "auth" | "ops" | "admin"): Promise<{ session: Session; denied: ActionResult | null }> {
+async function ensure(
+  kind: "auth" | "ops" | "admin"
+): Promise<{ session: Session; denied: ActionResult | null }> {
   const session = await getCurrentProfile();
   const role = session.profile?.role;
   if (kind === "admin" && !canManageAdmin(role)) {
@@ -63,7 +66,9 @@ async function uploadImage(
     .from(bucket)
     .upload(path, file, { upsert: false, contentType: file.type || undefined });
   if (error) return { error: "Görsel yüklenemedi: " + describeError(error) };
-  return { url: data?.path ? supabase.storage.from(bucket).getPublicUrl(data.path).data.publicUrl : undefined };
+  return {
+    url: data?.path ? supabase.storage.from(bucket).getPublicUrl(data.path).data.publicUrl : undefined
+  };
 }
 
 // Herkese acik URL'den depo icindeki obje yolunu cikar (best-effort silme icin).
@@ -78,9 +83,22 @@ function storagePathFromUrl(url: string, bucket: string): string | null {
 // Kimlik
 // ---------------------------------------------------------------------------
 export async function signOut() {
-  const { supabase } = await getCurrentProfile();
+  const { supabase, user } = await getCurrentProfile();
+  await supabase
+    .from("profiles")
+    .update({ is_online: false, last_seen_at: new Date().toISOString() })
+    .eq("id", user.id);
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+// Panel acikken periyodik cagrilir; kullanicinin cevrimici/son aktiflik bilgisini tazeler.
+export async function pingPresence() {
+  const { supabase, user } = await getCurrentProfile();
+  await supabase
+    .from("profiles")
+    .update({ is_online: true, last_seen_at: new Date().toISOString() })
+    .eq("id", user.id);
 }
 
 // ---------------------------------------------------------------------------
@@ -147,11 +165,10 @@ export async function deleteAnnouncement(_: ActionResult, formData: FormData): P
   if (denied) return denied;
   const id = getString(formData, "id");
   if (!id) return fail("Kayıt bulunamadı.");
-  return attempt(
-    () => session.supabase.from("announcements").delete().eq("id", id),
-    "Duyuru silindi.",
-    ["/announcements", "/dashboard"]
-  );
+  return attempt(() => session.supabase.from("announcements").delete().eq("id", id), "Duyuru silindi.", [
+    "/announcements",
+    "/dashboard"
+  ]);
 }
 
 export async function markAnnouncementRead(_: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -252,11 +269,10 @@ export async function deleteTask(_: ActionResult, formData: FormData): Promise<A
   if (denied) return denied;
   const id = getString(formData, "id");
   if (!id) return fail("Kayıt bulunamadı.");
-  return attempt(
-    () => session.supabase.from("tasks").delete().eq("id", id),
-    "Görev silindi.",
-    ["/tasks", "/dashboard"]
-  );
+  return attempt(() => session.supabase.from("tasks").delete().eq("id", id), "Görev silindi.", [
+    "/tasks",
+    "/dashboard"
+  ]);
 }
 
 // ---------------------------------------------------------------------------
@@ -363,106 +379,15 @@ export async function deleteFault(_: ActionResult, formData: FormData): Promise<
     }
   }
 
-  return attempt(
-    () => session.supabase.from("faults").delete().eq("id", id),
-    "Arıza kaydı silindi.",
-    ["/faults", "/dashboard"]
-  );
+  return attempt(() => session.supabase.from("faults").delete().eq("id", id), "Arıza kaydı silindi.", [
+    "/faults",
+    "/dashboard"
+  ]);
 }
 
 // ---------------------------------------------------------------------------
 // Vardiyalar
 // ---------------------------------------------------------------------------
-export async function createShift(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("ops");
-  if (denied) return denied;
-  const shiftDate = getString(formData, "shift_date");
-  const profileId = getString(formData, "profile_id");
-  const startsAt = getString(formData, "starts_at");
-  const endsAt = getString(formData, "ends_at");
-  if (!shiftDate || !profileId || !startsAt || !endsAt) {
-    return fail("Tarih, personel, başlangıç ve bitiş zorunludur.");
-  }
-
-  let photoUrl: string | null = null;
-  const file = formData.get("photo");
-  if (file instanceof File && file.size > 0) {
-    const upload = await uploadImage(session.supabase, "shift-photos", session.user.id, file);
-    if (upload.error) return fail(upload.error, { photo: upload.error });
-    photoUrl = upload.url ?? null;
-  }
-
-  return attempt(
-    () =>
-      session.supabase.from("shifts").insert({
-        shift_date: shiftDate,
-        profile_id: profileId,
-        starts_at: startsAt,
-        ends_at: endsAt,
-        is_leave: getBoolean(formData, "is_leave"),
-        note: getString(formData, "note"),
-        photo_url: photoUrl
-      }),
-    "Vardiya eklendi.",
-    ["/shifts", "/dashboard"]
-  );
-}
-
-export async function updateShift(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("ops");
-  if (denied) return denied;
-  const id = getString(formData, "id");
-  const shiftDate = getString(formData, "shift_date");
-  const profileId = getString(formData, "profile_id");
-  const startsAt = getString(formData, "starts_at");
-  const endsAt = getString(formData, "ends_at");
-  if (!id) return fail("Kayıt bulunamadı.");
-  if (!shiftDate || !profileId || !startsAt || !endsAt) {
-    return fail("Tarih, personel, başlangıç ve bitiş zorunludur.");
-  }
-
-  // Mevcut fotografi koru; yeni foto yuklenirse degistir; "kaldir" isaretliyse sil.
-  let photoUrl = getString(formData, "photo_url");
-  const file = formData.get("photo");
-  if (file instanceof File && file.size > 0) {
-    const upload = await uploadImage(session.supabase, "shift-photos", session.user.id, file);
-    if (upload.error) return fail(upload.error, { photo: upload.error });
-    photoUrl = upload.url ?? photoUrl;
-  } else if (getBoolean(formData, "remove_photo")) {
-    photoUrl = null;
-  }
-
-  return attempt(
-    () =>
-      session.supabase
-        .from("shifts")
-        .update({
-          shift_date: shiftDate,
-          profile_id: profileId,
-          starts_at: startsAt,
-          ends_at: endsAt,
-          is_leave: getBoolean(formData, "is_leave"),
-          note: getString(formData, "note"),
-          photo_url: photoUrl
-        })
-        .eq("id", id),
-    "Vardiya güncellendi.",
-    ["/shifts", "/dashboard"]
-  );
-}
-
-export async function deleteShift(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const { session, denied } = await ensure("ops");
-  if (denied) return denied;
-  const id = getString(formData, "id");
-  if (!id) return fail("Kayıt bulunamadı.");
-  return attempt(
-    () => session.supabase.from("shifts").delete().eq("id", id),
-    "Vardiya silindi.",
-    ["/shifts", "/dashboard"]
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Vardiya görselleri (haftalık plan — Excel çıktısı/fotoğraf)
 // ---------------------------------------------------------------------------
@@ -526,7 +451,11 @@ export async function updateProfile(_: ActionResult, formData: FormData): Promis
   // "başarılı" mesajını önlüyoruz.)
   if (!canManageAdmin(session.profile?.role)) {
     if (role === "admin") return fail("Admin rolünü yalnızca admin atayabilir.");
-    const { data: target } = await session.supabase.from("profiles").select("role").eq("id", id).maybeSingle();
+    const { data: target } = await session.supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", id)
+      .maybeSingle();
     if (target?.role === "admin") return fail("Bir yöneticiyi yalnızca admin düzenleyebilir.");
   }
 
@@ -556,7 +485,11 @@ export async function updateProfileActive(_: ActionResult, formData: FormData): 
 
   // Admin olmayan yetkili, bir admin'in aktiflik durumunu değiştiremez.
   if (!canManageAdmin(session.profile?.role)) {
-    const { data: target } = await session.supabase.from("profiles").select("role").eq("id", id).maybeSingle();
+    const { data: target } = await session.supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", id)
+      .maybeSingle();
     if (target?.role === "admin") return fail("Bir yöneticinin durumunu yalnızca admin değiştirebilir.");
   }
 
@@ -570,23 +503,79 @@ export async function updateProfileActive(_: ActionResult, formData: FormData): 
 // ---------------------------------------------------------------------------
 // Kayıt istekleri (self-servis kayıt onayı) — yetkili = admin veya takım lideri
 // ---------------------------------------------------------------------------
+// RPC "başarılı" dönse bile satır güncellenmemiş olabilir (ör. şema eski, kayıt
+// zaten işlenmiş). Onayın gerçekten veritabanına yazıldığını okuyarak doğrula.
+async function verifyRegistrationStatus(
+  session: Session,
+  target: string,
+  expected: "approved" | "rejected"
+): Promise<ActionResult | null> {
+  const { data, error } = await session.supabase
+    .from("profiles")
+    .select("registration_status")
+    .eq("id", target)
+    .maybeSingle();
+  if (error) return fail(describeError(error));
+  if (!data) return fail("Kullanıcı profili bulunamadı.");
+  if (data.registration_status !== expected) {
+    return fail(
+      "İşlem veritabanına kaydedilemedi. Kayıt onay bekliyor durumunda olmayabilir veya Supabase şeması güncel değil; " +
+        "lütfen supabase/schema.sql dosyasını Supabase SQL editöründe yeniden çalıştırın."
+    );
+  }
+  return null;
+}
+
+// Onaylanan kullanicinin e-postasini "dogrulanmis" isaretle.
+//
+// Supabase'de e-posta dogrulamasi acik oldugunda, self-servis kaydolan personel
+// e-postasini onaylamadigi surece Auth katmani girisi reddeder ve kullaniciya
+// (jenerik olarak) "sifre hatali" gorunur. Bu panelde asil kapi YETKILI onayidir;
+// bu yuzden onayla birlikte kullanicinin e-postasini dogrulanmis sayarak girisin
+// calismasini garanti ediyoruz. Dogrulama zaten yapilmissa islem etkisizdir.
+//
+// Hata mesaji doner (sorun yoksa null). SUPABASE_SECRET_KEY tanimli degilse
+// sessizce atlar (e-posta dogrulamasi kapali kurulumlar icin gerekmez).
+async function confirmUserEmail(userId: string): Promise<string | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { error } = await admin.auth.admin.updateUserById(userId, { email_confirm: true });
+  return error ? describeError(error) : null;
+}
+
 export async function approveRegistration(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const { session, denied } = await ensure("ops");
   if (denied) return denied;
   const target = getString(formData, "profile_id");
   if (!target) return fail("Kayıt bulunamadı.");
   const role = getEnum(formData, "role", userRoles) ?? "staff";
-  return attempt(
-    () =>
-      session.supabase.rpc("approve_registration", {
-        target,
-        new_role: role,
-        dept: getString(formData, "department_id"),
-        new_title: getString(formData, "title")
-      }),
-    "Kayıt onaylandı; personel artık giriş yapabilir.",
-    ["/registrations", "/personnel", "/admin", "/dashboard"]
-  );
+  try {
+    const { error } = await session.supabase.rpc("approve_registration", {
+      target,
+      new_role: role,
+      dept: getString(formData, "department_id"),
+      new_title: getString(formData, "title")
+    });
+    if (error) return fail(describeError(error));
+    const notApplied = await verifyRegistrationStatus(session, target, "approved");
+    if (notApplied) return notApplied;
+
+    // Profil onaylandi; simdi Auth tarafinda girisi acmak icin e-postayi dogrula.
+    const confirmError = await confirmUserEmail(target);
+    if (confirmError) {
+      ["/registrations", "/personnel", "/admin", "/dashboard"].forEach((path) => revalidatePath(path));
+      return ok(
+        "Kayıt onaylandı, ancak e-posta doğrulaması otomatik uygulanamadı; personel giriş yapamayabilir. " +
+          "SUPABASE_SECRET_KEY ortam değişkeninin tanımlı olduğundan emin olun. (" +
+          confirmError +
+          ")"
+      );
+    }
+  } catch (error) {
+    return fail(describeError(error));
+  }
+  ["/registrations", "/personnel", "/admin", "/dashboard"].forEach((path) => revalidatePath(path));
+  return ok("Kayıt onaylandı; personel artık giriş yapabilir.");
 }
 
 export async function rejectRegistration(_: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -594,11 +583,16 @@ export async function rejectRegistration(_: ActionResult, formData: FormData): P
   if (denied) return denied;
   const target = getString(formData, "profile_id");
   if (!target) return fail("Kayıt bulunamadı.");
-  return attempt(
-    () => session.supabase.rpc("reject_registration", { target }),
-    "Kayıt reddedildi.",
-    ["/registrations", "/dashboard"]
-  );
+  try {
+    const { error } = await session.supabase.rpc("reject_registration", { target });
+    if (error) return fail(describeError(error));
+    const notApplied = await verifyRegistrationStatus(session, target, "rejected");
+    if (notApplied) return notApplied;
+  } catch (error) {
+    return fail(describeError(error));
+  }
+  ["/registrations", "/dashboard"].forEach((path) => revalidatePath(path));
+  return ok("Kayıt reddedildi.");
 }
 
 export async function updateOwnProfile(_: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -628,11 +622,10 @@ export async function createDepartment(_: ActionResult, formData: FormData): Pro
   if (denied) return denied;
   const name = getString(formData, "name");
   if (!name) return fail("Departman adı zorunludur.", { name: "Departman adı zorunludur." });
-  return attempt(
-    () => session.supabase.from("departments").insert({ name }),
-    "Departman eklendi.",
-    ["/admin", "/personnel"]
-  );
+  return attempt(() => session.supabase.from("departments").insert({ name }), "Departman eklendi.", [
+    "/admin",
+    "/personnel"
+  ]);
 }
 
 export async function updateDepartment(_: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -653,9 +646,8 @@ export async function deleteDepartment(_: ActionResult, formData: FormData): Pro
   if (denied) return denied;
   const id = getString(formData, "id");
   if (!id) return fail("Kayıt bulunamadı.");
-  return attempt(
-    () => session.supabase.from("departments").delete().eq("id", id),
-    "Departman silindi.",
-    ["/admin", "/personnel"]
-  );
+  return attempt(() => session.supabase.from("departments").delete().eq("id", id), "Departman silindi.", [
+    "/admin",
+    "/personnel"
+  ]);
 }

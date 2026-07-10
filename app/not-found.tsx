@@ -8,7 +8,7 @@ export const metadata = { title: "Sayfa bulunamadı" };
 export default function NotFound() {
   return (
     <div className="grid min-h-[70vh] place-items-center px-4">
-      <div className="w-full max-w-md rounded-xl border border-line bg-surface p-8 text-center shadow-card">
+      <div className="w-full max-w-md rounded-lg border border-line bg-surface p-8 text-center shadow-card">
         <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200">
           <Compass className="h-7 w-7" aria-hidden />
         </span>

@@ -1,11 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Lock, LogIn, Mail } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Lock, LogIn, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/browser";
-import { Field, buttonClass, inputClass, labelClass } from "@/components/ui";
+import { Field, buttonClass, inputClass, labelClass, secondaryButtonClass } from "@/components/ui";
 import { cn } from "@/lib/utils";
+
+// Auth katmanindan gelen hatayi kullaniciya uygun mesaja cevir.
+function describeSignInError(message: string | undefined): string {
+  const m = (message ?? "").toLowerCase();
+  // E-posta dogrulanmamis: bu panelde giris, yetkili onayindan sonra acilir.
+  if (m.includes("not confirmed") || m.includes("email not confirmed")) {
+    return "Girişiniz henüz etkin değil. Kaydınız yetkili tarafından onaylandıktan sonra tekrar deneyin.";
+  }
+  return "E-posta veya şifre hatalı.";
+}
 
 function Spinner() {
   return (
@@ -16,8 +25,7 @@ function Spinner() {
   );
 }
 
-export function LoginForm() {
-  const router = useRouter();
+export function LoginForm({ onBack }: { onBack?: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -33,16 +41,20 @@ export function LoginForm() {
 
     if (signInError) {
       setLoading(false);
-      setError("E-posta veya şifre hatalı.");
+      setError(describeSignInError(signInError.message));
       return;
     }
 
-    router.replace("/dashboard");
-    router.refresh();
+    // Tam sayfa yönlendirme kullanıyoruz: taze oturum çerezi üst düzey istekle
+    // birlikte sunucuya gider; proxy (middleware) oturumu görüp bizi panele alır.
+    // Önceki router.replace()+router.refresh() akışı, çerez yazımı ile RSC
+    // getirmesi yarıştığı için "girişe takılı kalma / yenilemeden geçmeme"
+    // sorununa yol açıyordu. Çevrimiçi durumu paneldeki PresenceHeartbeat tazeler.
+    window.location.assign("/dashboard");
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-xl border border-line bg-surface p-6 shadow-card">
+    <form onSubmit={onSubmit} className="rounded-lg border border-line bg-surface p-6 shadow-card">
       <h2 className="text-2xl font-semibold text-ink">Giriş yap</h2>
       <p className="mt-1 text-sm text-muted">Ekip hesabınızla devam edin.</p>
 
@@ -88,7 +100,11 @@ export function LoginForm() {
               aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
               title={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" aria-hidden />
+              ) : (
+                <Eye className="h-4 w-4" aria-hidden />
+              )}
             </button>
           </div>
         </label>
@@ -107,6 +123,13 @@ export function LoginForm() {
         {loading ? <Spinner /> : <LogIn className="h-4 w-4" aria-hidden />}
         {loading ? "Giriş yapılıyor..." : "Giriş yap"}
       </button>
+
+      {onBack ? (
+        <button type="button" onClick={onBack} className={cn(secondaryButtonClass, "mt-3 w-full")}>
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Geri Dön
+        </button>
+      ) : null}
     </form>
   );
 }

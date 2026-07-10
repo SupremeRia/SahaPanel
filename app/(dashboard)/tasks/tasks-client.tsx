@@ -186,18 +186,27 @@ export function TasksClient({
                       <Badge tone={taskStatusTone[task.status]} dot>
                         {taskStatusLabels[task.status]}
                       </Badge>
-                      <Badge tone={taskPriorityTone[task.priority]}>{taskPriorityLabels[task.priority]}</Badge>
+                      <Badge tone={taskPriorityTone[task.priority]}>
+                        {taskPriorityLabels[task.priority]}
+                      </Badge>
                       {overdue ? <Badge tone="red">Gecikti</Badge> : null}
                     </div>
                     {task.description ? (
-                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted">{task.description}</p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted">
+                        {task.description}
+                      </p>
                     ) : null}
                     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-2">
                       <span className="inline-flex items-center gap-1">
                         <UserRound className="h-3.5 w-3.5" aria-hidden />
                         {task.assignee?.full_name ?? "Vardiya / genel"}
                       </span>
-                      <span className={cn("inline-flex items-center gap-1", overdue && "font-semibold text-signal-red dark:text-red-300")}>
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1",
+                          overdue && "font-semibold text-signal-red dark:text-red-300"
+                        )}
+                      >
                         <CalendarClock className="h-3.5 w-3.5" aria-hidden />
                         Son tarih: {formatDate(task.due_date)}
                       </span>
@@ -208,7 +217,11 @@ export function TasksClient({
                     {canUpdate ? (
                       <ActionForm action={updateTaskStatus} className="flex items-center gap-2">
                         <input type="hidden" name="task_id" value={task.id} />
-                        <select name="status" defaultValue={task.status} className={cn(selectClass, "min-h-9 w-40")}>
+                        <select
+                          name="status"
+                          defaultValue={task.status}
+                          className={cn(selectClass, "min-h-9 w-40")}
+                        >
                           {taskStatuses.map((s) => (
                             <option key={s} value={s}>
                               {taskStatusLabels[s]}
@@ -225,7 +238,13 @@ export function TasksClient({
                         <Dialog
                           title="Görevi düzenle"
                           trigger={(open) => (
-                            <button type="button" onClick={open} className={iconButtonClass} aria-label="Düzenle" title="Düzenle">
+                            <button
+                              type="button"
+                              onClick={open}
+                              className={iconButtonClass}
+                              aria-label="Düzenle"
+                              title="Düzenle"
+                            >
                               <Pencil className="h-4 w-4" aria-hidden />
                             </button>
                           )}

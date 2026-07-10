@@ -546,6 +546,7 @@ begin
       new.role := old.role;
       new.is_active := old.is_active;
       new.department_id := old.department_id;
+      new.registration_status := old.registration_status;
       return new;
     end if;
     -- Mevcut bir admin'in ayricalikli alanlarina dokunamaz.
@@ -553,18 +554,22 @@ begin
       new.role := old.role;
       new.is_active := old.is_active;
       new.department_id := old.department_id;
+      new.registration_status := old.registration_status;
       return new;
     end if;
     -- Kimseyi admin yapamaz.
     if new.role = 'admin' then
       new.role := old.role;
     end if;
+    -- Kayit durumu yalnizca onay/red RPC'leriyle veya admin tarafindan degissin.
+    new.registration_status := old.registration_status;
     return new;
   end if;
 
   new.role := old.role;
   new.is_active := old.is_active;
   new.department_id := old.department_id;
+  new.registration_status := old.registration_status;
   return new;
 end;
 $$;
@@ -599,6 +604,10 @@ begin
          department_id = coalesce(dept, department_id),
          title = coalesce(nullif(new_title, ''), title)
    where id = target and registration_status = 'pending';
+
+  if not found then
+    raise exception 'Onay bekleyen kayit bulunamadi; kayit daha once islenmis olabilir.';
+  end if;
 end;
 $$;
 
@@ -621,6 +630,10 @@ begin
      set is_active = false,
          registration_status = 'rejected'
    where id = target and registration_status = 'pending';
+
+  if not found then
+    raise exception 'Onay bekleyen kayit bulunamadi; kayit daha once islenmis olabilir.';
+  end if;
 end;
 $$;
 
@@ -778,3 +791,125 @@ drop policy if exists "Users can mark announcement read" on public.announcement_
 create policy "Users can mark announcement read"
 on public.announcement_reads for insert to authenticated
 with check (user_id = auth.uid() and public.is_approved());
+
+-- ===========================================================================
+-- v3.2 - Production hardening.
+-- Locks function search paths, limits RPC exposure, adds FK indexes, and removes
+-- broad public object read policies from private operational buckets.
+-- ===========================================================================
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+create or replace function public.stamp_task_completion()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.status = 'Tamamlandi' and old.status is distinct from 'Tamamlandi' then
+    new.completed_at := now();
+  elsif new.status is distinct from 'Tamamlandi' then
+    new.completed_at := null;
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function public.stamp_fault_resolution()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.status = 'Cozuldu' and old.status is distinct from 'Cozuldu' then
+    new.resolved_at := now();
+  elsif new.status is distinct from 'Cozuldu' then
+    new.resolved_at := null;
+  end if;
+  return new;
+end;
+$$;
+
+create index if not exists announcements_created_by_idx on public.announcements(created_by);
+create index if not exists tasks_created_by_idx on public.tasks(created_by);
+create index if not exists shift_boards_created_by_idx on public.shift_boards(created_by);
+
+drop policy if exists "Fault photos are public" on storage.objects;
+drop policy if exists "Shift photos are public" on storage.objects;
+drop policy if exists "Shift images are public" on storage.objects;
+
+revoke execute on function public.set_updated_at() from public, anon, authenticated;
+revoke execute on function public.stamp_task_completion() from public, anon, authenticated;
+revoke execute on function public.stamp_fault_resolution() from public, anon, authenticated;
+
+revoke execute on function public.current_user_role() from public, anon;
+revoke execute on function public.is_admin() from public, anon;
+revoke execute on function public.is_manager() from public, anon;
+revoke execute on function public.is_approved() from public, anon;
+grant execute on function public.current_user_role() to authenticated;
+grant execute on function public.is_admin() to authenticated;
+grant execute on function public.is_manager() to authenticated;
+grant execute on function public.is_approved() to authenticated;
+
+revoke execute on function public.approve_registration(uuid, public.user_role, uuid, text) from public, anon;
+revoke execute on function public.reject_registration(uuid) from public, anon;
+grant execute on function public.approve_registration(uuid, public.user_role, uuid, text) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Cevrimici personel takibi (dashboard "Cevrimici Personeller" karti)
+-- Giriste is_online=true/last_seen_at=now(), cikista is_online=false yapilir;
+-- ayrica panel acikken periyodik "heartbeat" ile last_seen_at tazelenir.
+-- Dashboard sorgusu is_online = true VE last_seen_at yakin zamanli olanlari
+-- "cevrimici" sayar, boylece kapanan sekmeler bir sure sonra otomatik dusuk.
+-- ---------------------------------------------------------------------------
+alter table public.profiles add column if not exists is_online boolean not null default false;
+alter table public.profiles add column if not exists last_seen_at timestamptz;
+
+create index if not exists profiles_is_online_idx on public.profiles(is_online, last_seen_at);
+grant execute on function public.reject_registration(uuid) to authenticated;
+
+-- Assignees may update only the status of their own tasks. Managers keep full
+-- task editing rights through the existing RLS policy and application UI.
+create or replace function public.guard_task_staff_updates()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if public.is_manager() then
+    return new;
+  end if;
+
+  if old.assigned_to = auth.uid()
+     and new.title is not distinct from old.title
+     and new.description is not distinct from old.description
+     and new.assigned_to is not distinct from old.assigned_to
+     and new.shift_id is not distinct from old.shift_id
+     and new.priority is not distinct from old.priority
+     and new.due_date is not distinct from old.due_date
+     and new.completed_at is not distinct from old.completed_at
+     and new.created_by is not distinct from old.created_by
+     and new.created_at is not distinct from old.created_at
+     and new.updated_at is not distinct from old.updated_at then
+    return new;
+  end if;
+
+  raise exception 'Personel yalnizca kendisine atanan gorevin durumunu guncelleyebilir.';
+end;
+$$;
+
+drop trigger if exists guard_task_staff_updates on public.tasks;
+create trigger guard_task_staff_updates before update on public.tasks
+for each row execute function public.guard_task_staff_updates();
+
+revoke execute on function public.guard_task_staff_updates() from public, anon, authenticated;

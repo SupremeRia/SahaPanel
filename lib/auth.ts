@@ -10,11 +10,7 @@ export async function getCurrentProfile() {
 
   if (!user) redirect("/login");
 
-  const { data } = await supabase
-    .from("profiles")
-    .select("*, departments(name)")
-    .eq("id", user.id)
-    .single();
+  const { data } = await supabase.from("profiles").select("*, departments(name)").eq("id", user.id).single();
 
   return {
     user,

@@ -3,8 +3,10 @@ import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
 import { canManageOperations, roleLabels } from "@/lib/types";
 import { Avatar } from "@/components/ui";
+import { BrandMark } from "@/components/brand-mark";
 import { MobileMenu, MobileNav, NavList } from "@/components/nav-list";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PresenceHeartbeat } from "@/components/presence-heartbeat";
 import { signOut } from "@/app/actions";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
@@ -15,7 +17,8 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-canvas">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r border-line bg-surface px-4 py-5 lg:flex">
+      <PresenceHeartbeat />
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-line bg-surface px-3 py-4 lg:flex">
         <Brand />
         <div className="flex-1 overflow-y-auto">
           <NavList isManager={isManager} />
@@ -49,7 +52,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="px-4 pb-24 pt-5 lg:ml-72 lg:px-8 lg:pb-8">
+      <main className="px-4 pb-24 pt-5 lg:ml-64 lg:px-6 lg:pb-8">
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>
 
@@ -61,9 +64,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <Link href="/dashboard" className="focus-ring flex items-center gap-3 rounded-md">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-600 font-bold text-white shadow-sm">
-        AP
-      </div>
+      <BrandMark size="md" />
       {compact ? (
         <p className="text-base font-bold text-ink">Aytemiz Petrol</p>
       ) : (

@@ -83,7 +83,11 @@ export function AdminClient({ departments }: { departments: Department[] }) {
                       </ActionForm>
                     )}
                   </Dialog>
-                  <DeleteButton action={deleteDepartment} fields={{ id: department.id }} title="Departmanı sil" />
+                  <DeleteButton
+                    action={deleteDepartment}
+                    fields={{ id: department.id }}
+                    title="Departmanı sil"
+                  />
                 </div>
               </li>
             ))}
@@ -98,16 +102,13 @@ export function AdminClient({ departments }: { departments: Department[] }) {
         />
         <div className="rounded-lg border border-line bg-surface-2 p-4 text-sm leading-6 text-muted">
           <p>
-            Yeni personel, giriş ekranındaki <span className="font-semibold text-ink">Kayıt ol</span> sekmesinden
-            e-posta, ad soyad, telefon ve departman bilgisiyle başvurur. Başvurular{" "}
-            <span className="font-semibold text-ink">Kayıt İstekleri</span> sekmesine düşer; onayladığınızda unvanı
-            belirleyip girişlerini aktifleştirebilirsiniz. Artık elle kullanıcı ID girmenize gerek yok.
+            Yeni personel, giriş ekranındaki <span className="font-semibold text-ink">Kayıt ol</span>{" "}
+            sekmesinden e-posta, ad soyad, telefon ve departman bilgisiyle başvurur. Başvurular{" "}
+            <span className="font-semibold text-ink">Kayıt İstekleri</span> sekmesine düşer; onayladığınızda
+            unvanı belirleyip girişlerini aktifleştirebilirsiniz. Artık elle kullanıcı ID girmenize gerek yok.
           </p>
         </div>
-        <Link
-          href="/registrations"
-          className={secondaryButtonClass + " justify-center"}
-        >
+        <Link href="/registrations" className={secondaryButtonClass + " justify-center"}>
           <UserCheck className="h-4 w-4" aria-hidden />
           Kayıt İsteklerine git
         </Link>

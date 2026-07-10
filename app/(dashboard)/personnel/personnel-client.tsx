@@ -63,7 +63,9 @@ export function PersonnelClient({
       if (active === "active" && !person.is_active) return false;
       if (active === "inactive" && person.is_active) return false;
       if (query) {
-        const haystack = `${person.full_name} ${person.title ?? ""} ${person.phone ?? ""}`.toLocaleLowerCase("tr");
+        const haystack = `${person.full_name} ${person.title ?? ""} ${person.phone ?? ""}`.toLocaleLowerCase(
+          "tr"
+        );
         if (!haystack.includes(query)) return false;
       }
       return true;
@@ -172,14 +174,21 @@ export function PersonnelClient({
                       <ActionForm action={updateProfile} onSuccess={close} className="grid gap-4">
                         <input type="hidden" name="id" value={person.id} />
                         <Field label="Ad Soyad">
-                          <input name="full_name" className={inputClass} defaultValue={person.full_name} required />
+                          <input
+                            name="full_name"
+                            className={inputClass}
+                            defaultValue={person.full_name}
+                            required
+                          />
                         </Field>
                         <div className="grid gap-4 sm:grid-cols-2">
                           <Field label="Rol">
                             <select name="role" className={selectClass} defaultValue={person.role}>
                               {(canGrantAdmin
                                 ? userRoles
-                                : Array.from(new Set([...userRoles.filter((r) => r !== "admin"), person.role]))
+                                : Array.from(
+                                    new Set([...userRoles.filter((r) => r !== "admin"), person.role])
+                                  )
                               ).map((r) => (
                                 <option key={r} value={r}>
                                   {roleLabels[r]}
@@ -188,7 +197,11 @@ export function PersonnelClient({
                             </select>
                           </Field>
                           <Field label="Departman">
-                            <select name="department_id" className={selectClass} defaultValue={person.department_id ?? ""}>
+                            <select
+                              name="department_id"
+                              className={selectClass}
+                              defaultValue={person.department_id ?? ""}
+                            >
                               <option value="">Seçilmedi</option>
                               {departments.map((dept) => (
                                 <option key={dept.id} value={dept.id}>

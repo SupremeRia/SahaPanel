@@ -48,13 +48,17 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      <div className="absolute inset-0 animate-overlay-in bg-ink/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
+      <div
+        className="absolute inset-0 animate-overlay-in bg-ink/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden
+      />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "relative z-10 max-h-[90vh] w-full animate-slide-up overflow-y-auto rounded-t-2xl border border-line bg-surface shadow-pop sm:rounded-2xl",
+          "relative z-10 max-h-[90vh] w-full animate-slide-up overflow-y-auto rounded-t-lg border border-line bg-surface shadow-pop sm:rounded-lg",
           sizes[size]
         )}
       >

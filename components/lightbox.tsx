@@ -45,7 +45,12 @@ export function ImageLightbox({
       )}
       <Modal open={open} onClose={onClose} title={title} size="lg">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} loading="lazy" className="mx-auto max-h-[70vh] w-auto rounded-lg object-contain" />
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          className="mx-auto max-h-[70vh] w-auto rounded-lg object-contain"
+        />
         <div className="mt-4 flex justify-end">
           <a href={src} target="_blank" rel="noreferrer" className={secondaryButtonClass}>
             Yeni sekmede aç

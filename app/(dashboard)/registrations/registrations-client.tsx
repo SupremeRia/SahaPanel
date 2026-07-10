@@ -144,7 +144,11 @@ export function RegistrationsClient({
                       <button type="button" onClick={close} className={secondaryButtonClass}>
                         Vazgeç
                       </button>
-                      <SubmitButton variant="danger" className={dangerButtonClass} pendingText="Reddediliyor...">
+                      <SubmitButton
+                        variant="danger"
+                        className={dangerButtonClass}
+                        pendingText="Reddediliyor..."
+                      >
                         Reddet
                       </SubmitButton>
                     </div>

@@ -1,9 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Eye, EyeOff, Lock, Mail, Phone, UserPlus, UserRound } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Eye, EyeOff, Lock, Mail, Phone, UserPlus, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/browser";
-import { Field, buttonClass, inputClass, labelClass, secondaryButtonClass, selectClass } from "@/components/ui";
+import {
+  Field,
+  buttonClass,
+  inputClass,
+  labelClass,
+  secondaryButtonClass,
+  selectClass
+} from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 type DepartmentOption = { id: string; name: string };
@@ -19,10 +26,12 @@ function Spinner() {
 
 export function RegisterForm({
   departments,
-  onSwitchToLogin
+  onSwitchToLogin,
+  onBack
 }: {
   departments: DepartmentOption[];
   onSwitchToLogin?: () => void;
+  onBack?: () => void;
 }) {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -86,7 +95,7 @@ export function RegisterForm({
 
   if (done) {
     return (
-      <div className="rounded-xl border border-line bg-surface p-6 shadow-card text-center">
+      <div className="rounded-lg border border-line bg-surface p-6 text-center shadow-card">
         <span className="inline-grid h-14 w-14 place-items-center rounded-full bg-brand-500/12 text-brand-700 dark:text-brand-200">
           <CheckCircle2 className="h-7 w-7" aria-hidden />
         </span>
@@ -94,7 +103,11 @@ export function RegisterForm({
         <p className="mt-2 text-sm text-muted">
           Talebiniz yetkiliye iletildi. Onaylandıktan sonra e-posta ve şifrenizle giriş yapabilirsiniz.
         </p>
-        <button type="button" onClick={onSwitchToLogin} className={cn(secondaryButtonClass, "mt-5 w-full")}>
+        <button
+          type="button"
+          onClick={onSwitchToLogin ?? onBack}
+          className={cn(secondaryButtonClass, "mt-5 w-full")}
+        >
           Giriş ekranına dön
         </button>
       </div>
@@ -102,14 +115,19 @@ export function RegisterForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-xl border border-line bg-surface p-6 shadow-card">
+    <form onSubmit={onSubmit} className="rounded-lg border border-line bg-surface p-6 shadow-card">
       <h2 className="text-2xl font-semibold text-ink">Kayıt ol</h2>
-      <p className="mt-1 text-sm text-muted">Bilgilerinizi girin; yetkili onayından sonra giriş yapabilirsiniz.</p>
+      <p className="mt-1 text-sm text-muted">
+        Bilgilerinizi girin; yetkili onayından sonra giriş yapabilirsiniz.
+      </p>
 
       <div className="mt-6 grid gap-4">
         <Field label="E-posta">
           <div className="relative">
-            <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2" aria-hidden />
+            <Mail
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2"
+              aria-hidden
+            />
             <input
               className={cn(inputClass, "pl-9")}
               type="email"
@@ -124,7 +142,10 @@ export function RegisterForm({
 
         <Field label="İsim soyisim">
           <div className="relative">
-            <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2" aria-hidden />
+            <UserRound
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2"
+              aria-hidden
+            />
             <input
               className={cn(inputClass, "pl-9")}
               type="text"
@@ -139,7 +160,10 @@ export function RegisterForm({
 
         <Field label="Telefon numarası">
           <div className="relative">
-            <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2" aria-hidden />
+            <Phone
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2"
+              aria-hidden
+            />
             <input
               className={cn(inputClass, "pl-9")}
               type="tel"
@@ -173,7 +197,10 @@ export function RegisterForm({
         <label className={labelClass}>
           <span>Şifre</span>
           <div className="relative">
-            <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2" aria-hidden />
+            <Lock
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2"
+              aria-hidden
+            />
             <input
               className={cn(inputClass, "pl-9 pr-10")}
               type={showPassword ? "text" : "password"}
@@ -189,14 +216,21 @@ export function RegisterForm({
               className="focus-ring absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-muted-2 transition hover:bg-surface-2 hover:text-ink"
               aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" aria-hidden />
+              ) : (
+                <Eye className="h-4 w-4" aria-hidden />
+              )}
             </button>
           </div>
         </label>
 
         <Field label="Şifre (tekrar)">
           <div className="relative">
-            <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2" aria-hidden />
+            <Lock
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2"
+              aria-hidden
+            />
             <input
               className={cn(inputClass, "pl-9")}
               type={showPassword ? "text" : "password"}
@@ -223,6 +257,13 @@ export function RegisterForm({
         {loading ? <Spinner /> : <UserPlus className="h-4 w-4" aria-hidden />}
         {loading ? "Kaydınız oluşturuluyor..." : "Kayıt ol"}
       </button>
+
+      {onBack ? (
+        <button type="button" onClick={onBack} className={cn(secondaryButtonClass, "mt-3 w-full")}>
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Geri Dön
+        </button>
+      ) : null}
     </form>
   );
 }

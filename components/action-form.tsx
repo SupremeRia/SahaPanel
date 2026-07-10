@@ -109,7 +109,10 @@ export function DeleteButton({
       <button
         type="button"
         onClick={onOpen}
-        className={cn(triggerClassName ?? iconButtonClass, "hover:border-signal-red/40 hover:text-signal-red")}
+        className={cn(
+          triggerClassName ?? iconButtonClass,
+          "hover:border-signal-red/40 hover:text-signal-red"
+        )}
         aria-label={triggerLabel ?? title}
         title={triggerLabel ?? title}
       >

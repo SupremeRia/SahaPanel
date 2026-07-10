@@ -11,7 +11,10 @@ export default async function AdminPage() {
   const { supabase, profile } = await getCurrentProfile();
   if (!canManageOperations(profile?.role)) redirect("/dashboard");
 
-  const { data: departments } = await supabase.from("departments").select("*").order("name", { ascending: true });
+  const { data: departments } = await supabase
+    .from("departments")
+    .select("*")
+    .order("name", { ascending: true });
 
   return (
     <div className="grid gap-6">

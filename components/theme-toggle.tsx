@@ -4,7 +4,8 @@ import { Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // FOUC (yanip sonme) olmasin diye layout <head> icine yerlestirilir.
-export const themeInitScript = `(function(){try{var t=localStorage.getItem('sp-theme');var m=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(!t&&m)){document.documentElement.classList.add('dark');}}catch(e){}})();`;
+// Kurumsal koyu tema varsayilandir; kullanici acikca "light" secmediyse koyu kalir.
+export const themeInitScript = `(function(){try{var t=localStorage.getItem('sp-theme');if(t!=='light'){document.documentElement.classList.add('dark');}}catch(e){document.documentElement.classList.add('dark');}})();`;
 
 export function ThemeToggle({ className }: { className?: string }) {
   function toggle() {

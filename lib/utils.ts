@@ -91,5 +91,5 @@ export function toCsv(rows: Array<Record<string, unknown>>, headers?: string[]) 
 }
 
 export function pluralize(count: number, singular: string, plural?: string) {
-  return `${count} ${count === 1 ? singular : plural ?? singular}`;
+  return `${count} ${count === 1 ? singular : (plural ?? singular)}`;
 }

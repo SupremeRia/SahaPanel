@@ -166,12 +166,17 @@ export function FaultsClient({
                     <Badge tone={faultStatusTone[fault.status]} dot>
                       {faultStatusLabels[fault.status]}
                     </Badge>
-                    <Badge tone={faultSeverityTone[fault.severity]}>{faultSeverityLabels[fault.severity]}</Badge>
+                    <Badge tone={faultSeverityTone[fault.severity]}>
+                      {faultSeverityLabels[fault.severity]}
+                    </Badge>
                   </div>
                   <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted">{fault.description}</p>
 
                   {fault.photo_url ? (
-                    <FaultPhoto src={fault.photo_url} alt={`${faultCategoryLabels[fault.category]} arıza fotoğrafı`} />
+                    <FaultPhoto
+                      src={fault.photo_url}
+                      alt={`${faultCategoryLabels[fault.category]} arıza fotoğrafı`}
+                    />
                   ) : null}
 
                   {fault.resolution_note ? (
@@ -194,7 +199,11 @@ export function FaultsClient({
                   <div className="flex flex-col gap-2 lg:items-end">
                     <ActionForm action={updateFaultStatus} className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="fault_id" value={fault.id} />
-                      <select name="status" defaultValue={fault.status} className={cn(selectClass, "min-h-9 w-44")}>
+                      <select
+                        name="status"
+                        defaultValue={fault.status}
+                        className={cn(selectClass, "min-h-9 w-44")}
+                      >
                         {faultStatuses.map((s) => (
                           <option key={s} value={s}>
                             {faultStatusLabels[s]}
@@ -322,7 +331,12 @@ function FaultFields({
         </Field>
       </div>
       <Field label="Açıklama">
-        <textarea name="description" className={textareaClass} defaultValue={fault?.description ?? ""} required />
+        <textarea
+          name="description"
+          className={textareaClass}
+          defaultValue={fault?.description ?? ""}
+          required
+        />
       </Field>
       {withPhoto ? (
         <Field label="Fotoğraf" hint="İsteğe bağlı — arızayı gösteren bir görsel ekleyebilirsiniz.">
@@ -341,7 +355,11 @@ function FaultFields({
             </select>
           </Field>
           <Field label="Çözüm notu">
-            <textarea name="resolution_note" className={textareaClass} defaultValue={fault?.resolution_note ?? ""} />
+            <textarea
+              name="resolution_note"
+              className={textareaClass}
+              defaultValue={fault?.resolution_note ?? ""}
+            />
           </Field>
         </>
       ) : null}

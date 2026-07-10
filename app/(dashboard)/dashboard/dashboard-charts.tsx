@@ -10,7 +10,7 @@ export type BarItem = { label: string; value: number; tone: Tone };
 // ui.tsx içindeki dotClasses desenini yerelde tekrar ediyoruz.
 const barColor: Record<Tone, string> = {
   neutral: "bg-slate-400",
-  green: "bg-brand-500",
+  green: "bg-emerald-500",
   amber: "bg-amber-500",
   red: "bg-signal-red",
   blue: "bg-signal-blue",
@@ -33,7 +33,7 @@ function BarList({
 
   return (
     <Panel className="h-full">
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-3 flex items-center gap-2">
         {Icon ? (
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-surface-2 text-muted">
             <Icon className="h-4 w-4" aria-hidden />
@@ -46,9 +46,9 @@ function BarList({
       </div>
 
       {total === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-2">Henüz veri yok.</p>
+        <p className="py-5 text-center text-sm text-muted-2">Henüz veri yok.</p>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-2.5">
           {items.map((item) => {
             const pct = max > 0 ? Math.round((item.value / max) * 100) : 0;
             const width = item.value > 0 ? Math.max(pct, 6) : 0;
@@ -58,7 +58,7 @@ function BarList({
                   <span className="truncate text-ink">{item.label}</span>
                   <span className="tabular-nums font-semibold text-muted">{item.value}</span>
                 </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
                   <div
                     className={cn("h-full rounded-full transition-all", barColor[item.tone])}
                     style={{ width: `${width}%` }}
@@ -83,7 +83,7 @@ export function DashboardCharts({
   faultCategory: BarItem[];
 }) {
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div className="grid gap-4 lg:grid-cols-3">
       <BarList
         title="Görev durumu"
         description="Duruma göre görev dağılımı"

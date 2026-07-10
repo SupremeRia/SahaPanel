@@ -132,7 +132,10 @@ export function AnnouncementsClient({
               .filter((name): name is string => Boolean(name));
 
             return (
-              <Panel key={announcement.id} className={announcement.pinned ? "border-signal-purple/30" : undefined}>
+              <Panel
+                key={announcement.id}
+                className={announcement.pinned ? "border-signal-purple/30" : undefined}
+              >
                 <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -145,7 +148,9 @@ export function AnnouncementsClient({
                       ) : null}
                       {read ? <Badge tone="green">Okundu</Badge> : <Badge tone="amber">Bekliyor</Badge>}
                     </div>
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted">{announcement.body}</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted">
+                      {announcement.body}
+                    </p>
                     <p className="mt-3 text-xs text-muted-2">
                       {announcement.profiles?.full_name ?? "Yetkili"} · {timeAgo(announcement.created_at)}
                     </p>
@@ -217,7 +222,11 @@ export function AnnouncementsClient({
                             </span>
                           </SubmitButton>
                         </ActionForm>
-                        <DeleteButton action={deleteAnnouncement} fields={{ id: announcement.id }} title="Duyuruyu sil" />
+                        <DeleteButton
+                          action={deleteAnnouncement}
+                          fields={{ id: announcement.id }}
+                          title="Duyuruyu sil"
+                        />
                       </div>
                     ) : null}
                   </div>

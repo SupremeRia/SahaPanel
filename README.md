@@ -11,7 +11,8 @@ Bu panel; WhatsApp grup karmaşası yerine duyuru, görev, arıza, vardiya ve pe
 - PWA kurulumu: uygulamayı ana ekrana ekleyip mobilde açma
 - Görev öncelikleri (Düşük / Normal / Yüksek / Acil) ve geciken görev takibi
 - Arıza önem derecesi (Düşük / Orta / Yüksek / Kritik) ve fotoğraf büyütme (lightbox)
-- Vardiya takvimi görünümü
+- Haftalık vardiya planı görsel paylaşımı (2026-07-08 itibarıyla güncellendi: liste/takvim/arama/filtre ve vardiya oluşturma formu kaldırıldı, sadece Excel çıktısının fotoğraf/görsel olarak yüklendiği galeri kaldı)
+- Dashboard'da "Çevrimiçi Personeller" kartı (2026-07-08'de eklendi): giriş/çıkış ve periyodik heartbeat ile personelin anlık çevrimiçi durumu izlenir
 - CSV olarak dışa aktarma
 - Supabase RLS ile rol bazlı erişim kontrolü
 - Türkçe tipografi ve doğru diakritik kullanımı
@@ -34,7 +35,7 @@ Bu panel; WhatsApp grup karmaşası yerine duyuru, görev, arıza, vardiya ve pe
 | `/announcements` | Duyurular, sabitleme ve okundu takibi |
 | `/tasks` | Görevler, öncelik ve durum yönetimi, geciken görevler |
 | `/faults` | Arıza kayıtları, önem derecesi ve fotoğraf yükleme |
-| `/shifts` | Vardiya listesi ve takvim görünümü |
+| `/shifts` | Haftalık vardiya planı görsel paylaşımı (güncellendi 2026-07-08: eski liste/takvim görünümü kaldırıldı) |
 | `/personnel` | Personel listesi ve bilgileri |
 | `/admin` | Yetkili paneli: rol, departman ve personel yönetimi |
 | `/profile` | Kullanıcının kendi profil bilgileri |
@@ -84,6 +85,7 @@ npm run dev
 - Yeni bir kullanıcı Auth tarafında oluştuğunda `handle_new_user` tetikleyicisi devreye girer ve varsayılan olarak `staff` (Personel) rolüyle otomatik bir profil kaydı açar.
 - Kullanıcının rolü ve departmanı Yetkili Paneli (`/admin`) üzerinden düzenlenir. Admin olmayan kullanıcılar `guard_profile_privileges` tetikleyicisi sayesinde kendi rollerini, departmanlarını veya aktifliklerini değiştiremez.
 - Görev "Tamamlandı" ve arıza "Çözüldü" durumlarına geçtiğinde tamamlanma / çözülme zaman damgaları tetikleyicilerle otomatik yönetilir.
+- (2026-07-08 eklendi) `profiles.is_online` ve `profiles.last_seen_at`: giriş yapınca ve panel açıkken periyodik "heartbeat" ile (`pingPresence` server action) güncellenir; çıkışta `is_online` false yapılır. Dashboard'daki "Çevrimiçi Personeller" kartı bu alanları kullanır. Ayrıntı için [CHANGELOG.md](CHANGELOG.md) ve [TODO.md](TODO.md) dosyalarına bakın.
 
 ## Komutlar
 
@@ -108,4 +110,4 @@ Proje Vercel üzerinde dağıtıma uygundur.
 
 ## Katkı
 
-Geliştirme akışı, kod düzeni ve stil kuralları için [CONTRIBUTING.md](CONTRIBUTING.md) dosyasına bakın. Ekip içi iş bölümü ve kontrol listesi için [COLLABORATION.md](COLLABORATION.md) dosyasını inceleyebilirsiniz.
+Geliştirme akışı, kod düzeni ve stil kuralları için [CONTRIBUTING.md](CONTRIBUTING.md) dosyasına bakın. Ekip içi iş bölümü ve kontrol listesi için [COLLABORATION.md](COLLABORATION.md) dosyasını inceleyebilirsiniz. Değişiklik geçmişi için [CHANGELOG.md](CHANGELOG.md), bilinen hatalar ve bekleyen işler için [TODO.md](TODO.md) dosyasına bakın.

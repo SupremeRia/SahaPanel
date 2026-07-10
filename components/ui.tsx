@@ -6,7 +6,7 @@ import type { Tone } from "@/lib/types";
 // Ortak sinif dizeleri (client/server her yerde kullanilabilir)
 // ---------------------------------------------------------------------------
 export const inputClass =
-  "focus-ring min-h-10 w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted-2 transition";
+  "focus-ring min-h-10 w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted-2 transition focus:border-brand-500";
 
 export const selectClass = cn(inputClass, "cursor-pointer");
 
@@ -15,7 +15,7 @@ export const textareaClass = cn(inputClass, "min-h-24 resize-y leading-6");
 export const labelClass = "grid gap-1.5 text-sm font-medium text-ink";
 
 export const buttonClass =
-  "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60";
+  "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-brand-500 hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60";
 
 export const secondaryButtonClass =
   "focus-ring inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-60";
@@ -66,7 +66,7 @@ export function PageHeader({
 // ---------------------------------------------------------------------------
 export function Panel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <section className={cn("rounded-xl border border-line bg-surface p-4 shadow-card", className)}>
+    <section className={cn("rounded-lg border border-line bg-surface p-4 shadow-card", className)}>
       {children}
     </section>
   );
@@ -95,9 +95,11 @@ export function SectionTitle({
 // ---------------------------------------------------------------------------
 // Rozet
 // ---------------------------------------------------------------------------
+// Not: "green" tonu durum (basari/tamamlandi) anlamini korumak icin markadan
+// bagimsiz gercek yesildir; marka vurgusu (butonlar vb.) mat kirmizidir.
 const toneClasses: Record<Tone, string> = {
   neutral: "bg-slate-500/10 text-slate-600 dark:bg-slate-400/15 dark:text-slate-300",
-  green: "bg-brand-500/12 text-brand-700 dark:bg-brand-400/15 dark:text-brand-200",
+  green: "bg-emerald-500/12 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300",
   amber: "bg-amber-500/12 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300",
   red: "bg-signal-red/12 text-signal-red dark:bg-signal-red/20 dark:text-red-300",
   blue: "bg-signal-blue/12 text-signal-blue dark:bg-signal-blue/20 dark:text-sky-300",
@@ -106,7 +108,7 @@ const toneClasses: Record<Tone, string> = {
 
 const dotClasses: Record<Tone, string> = {
   neutral: "bg-slate-400",
-  green: "bg-brand-500",
+  green: "bg-emerald-500",
   amber: "bg-amber-500",
   red: "bg-signal-red",
   blue: "bg-signal-blue",
@@ -178,21 +180,21 @@ export function StatCard({
   href?: string;
 }) {
   const inner = (
-    <Panel className={cn("h-full transition", href && "hover:border-brand-200 hover:shadow-panel")}>
-      <div className="flex items-center justify-between gap-3">
+    <Panel className={cn("h-full p-3.5 transition", href && "hover:border-brand-200 hover:shadow-panel")}>
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm text-muted">{label}</p>
-          <p className="mt-2 text-3xl font-semibold text-ink">{value}</p>
+          <p className="text-xs font-semibold uppercase text-muted-2">{label}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">{value}</p>
           {hint ? <p className="mt-1 truncate text-xs text-muted-2">{hint}</p> : null}
         </div>
-        <span className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-lg", toneClasses[tone])}>
+        <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-md", toneClasses[tone])}>
           <Icon className="h-5 w-5" aria-hidden />
         </span>
       </div>
     </Panel>
   );
   return href ? (
-    <Link href={href} className="focus-ring block rounded-xl">
+    <Link href={href} className="focus-ring block rounded-lg">
       {inner}
     </Link>
   ) : (
@@ -215,7 +217,7 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="grid place-items-center rounded-xl border border-dashed border-line bg-surface-2/50 px-6 py-12 text-center">
+    <div className="grid place-items-center rounded-lg border border-dashed border-line bg-surface-2/50 px-6 py-12 text-center">
       {Icon ? (
         <span className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-surface text-muted-2 shadow-sm">
           <Icon className="h-6 w-6" aria-hidden />
@@ -256,8 +258,17 @@ export function Avatar({ name, size = "md" }: { name?: string | null; size?: "sm
 export function ProgressBar({ value, max, tone = "green" }: { value: number; max: number; tone?: Tone }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-      <div className={cn("h-full rounded-full transition-all", dotClasses[tone])} style={{ width: `${pct}%` }} />
+    <div
+      className="h-2 w-full overflow-hidden rounded-full bg-surface-2"
+      role="progressbar"
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <div
+        className={cn("h-full rounded-full transition-all", dotClasses[tone])}
+        style={{ width: `${pct}%` }}
+      />
     </div>
   );
 }

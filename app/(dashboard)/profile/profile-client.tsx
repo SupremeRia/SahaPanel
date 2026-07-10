@@ -5,15 +5,7 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { Field, Panel, SectionTitle, inputClass } from "@/components/ui";
 import { updateOwnProfile } from "@/app/actions";
 
-export function ProfileForm({
-  fullName,
-  title,
-  phone
-}: {
-  fullName: string;
-  title: string;
-  phone: string;
-}) {
+export function ProfileForm({ fullName, title, phone }: { fullName: string; title: string; phone: string }) {
   return (
     <Panel className="max-w-2xl">
       <SectionTitle
